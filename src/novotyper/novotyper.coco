@@ -1,0 +1,29 @@
+from cyclopts import App
+import genotyper as gt
+
+
+gt.say_hello()
+
+fasta_path = "/export/home/jeffrey/Documents/novocraft-prototype-sv-genotyper/previous_outputs/alt_scaffolds.fa"
+vcf_path = "/export/home/jeffrey/Documents/novocraft-prototype-sv-genotyper/resources/sv-vcf-files/HG002_SVs_Tier1_v0.6.ALL.vcf"
+sample = "HG002"
+bedgraph_file = "/export/home/jeffrey/Documents/novocraft-prototype-sv-genotyper/previous_outputs/HG002/HG002.sv.sorted.bedgraph"
+
+if __name__ == "__main__":
+    vcf_info = gt.extract_info_from_vcf(vcf_path, sample)
+    mapq_bedgraph = gt.read_mapq_bedgraph(bedgraph_file)
+
+    test_locs = (
+        fasta_path
+        |> gt.read_alts_fasta_descriptions
+        |> lift(,)(gt.extract_ref_locs_of_alts, gt.extract_sv_locs)
+        |*> gt.join_ref_and_sv_locs
+        |> gt.define_alt_test_locs
+        |> gt.add_vcf_info_to_test_locs$(?, vcf_info)
+        |> gt.get_pass_variants
+        |> lift(,)(gt.get_ref_test_locs, gt.get_alt_test_locs)
+        |> map$(gt.calculate_mapq$(?, mapq_bedgraph))
+        |> list
+    )
+
+    print(*test_locs)

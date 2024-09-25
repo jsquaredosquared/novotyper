@@ -1,0 +1,41 @@
+[project]
+name = "novotyper"
+version = "0.1.0"
+description = "Add your description here"
+authors = [
+    { name = "jsquaredosquared", email = "jeffreyjamesochiengodongo@gmail.com" }
+]
+dependencies = [
+    "marimo>=0.8.19",
+    "pandas>=2.2.3",
+    "polars[all]>=1.8.2",
+    "altair[all]>=5.4.1",
+    "bioframe>=0.7.2",
+    "numpy<2",
+    "pyranges>=0.1.2",
+    "cyclopts>=2.9.9",
+    "pytest>=8.3.3",
+    "ipykernel>=6.29.5",
+    "coconut>=3.1.2",
+]
+readme = "README.md"
+requires-python = ">= 3.8"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.rye]
+managed = true
+dev-dependencies = []
+
+[tool.hatch.metadata]
+allow-direct-references = true
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/novotyper"]
+
+[tool.pytest.ini_options]
+addopts = [
+    "--import-mode=importlib",
+]
