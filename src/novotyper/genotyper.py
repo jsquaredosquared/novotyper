@@ -137,7 +137,7 @@ def add_vcf_info_to_test_locs(locs: pd.DataFrame, vcf: pd.DataFrame) -> pd.DataF
 
 # TODO: Change this to accept a specified range of filters and genotypes.
 def get_pass_variants(locs: pd.DataFrame) -> pd.DataFrame:
-    return locs.query('FILTER == "PASS"')
+    return locs.query('FILTER == "PASS" or FILTER == "."')
 
 
 def get_ref_test_locs(test_locs: pd.DataFrame) -> pd.DataFrame:
