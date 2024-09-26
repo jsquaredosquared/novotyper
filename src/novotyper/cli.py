@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# __coconut_hash__ = 0x83093bb2
+# __coconut_hash__ = 0x2ea37ef4
 
 # Compiled with Coconut version 3.1.2
 
@@ -2975,27 +2975,25 @@ TYPE_CHECKING, _coconut_Expected, _coconut_MatchError, _coconut_cartesian_produc
 # Compiled Coconut: -----------------------------------------------------------
 
 from cyclopts import App  #1 (line in Coconut source)
-from . import genotyper as gt  #2 (line in Coconut source)
+from novotyper import genotyper as gt  #2 (line in Coconut source)
 
 
-gt.say_hello()  #5 (line in Coconut source)
-
-fasta_path = "/export/home/jeffrey/Documents/novocraft-prototype-sv-genotyper/previous_outputs/alt_scaffolds.fa"  #7 (line in Coconut source)
-vcf_path = "/export/home/jeffrey/Documents/novocraft-prototype-sv-genotyper/resources/sv-vcf-files/HG002_SVs_Tier1_v0.6.ALL.vcf"  #8 (line in Coconut source)
-sample = "HG002"  #9 (line in Coconut source)
-bedgraph_file = "/export/home/jeffrey/Documents/novocraft-prototype-sv-genotyper/previous_outputs/HG002/HG002.sv.sorted.bedgraph"  #10 (line in Coconut source)
+fasta_path = "/export/home/jeffrey/Documents/novocraft-prototype-sv-genotyper/previous_outputs/alt_scaffolds.fa"  #5 (line in Coconut source)
+vcf_path = "/export/home/jeffrey/Documents/novocraft-prototype-sv-genotyper/resources/sv-vcf-files/HG002_SVs_Tier1_v0.6.ALL.vcf"  #6 (line in Coconut source)
+sample = "HG002"  #7 (line in Coconut source)
+bedgraph_file = "/export/home/jeffrey/Documents/novocraft-prototype-sv-genotyper/previous_outputs/HG002/HG002.sv.sorted.bedgraph"  #8 (line in Coconut source)
 
 
-novotyper = App()  #13 (line in Coconut source)
+novotyper = App()  #11 (line in Coconut source)
 
 
-@novotyper.command  #16 (line in Coconut source)
-def genotype(fasta_file,  # type: str  #17 (line in Coconut source)
-    bedgraph_file,  # type: str  #17 (line in Coconut source)
-    vcf_file,  # type: str  #17 (line in Coconut source)
-    sample,  # type: str  #17 (line in Coconut source)
-    out_dir  # type: str  #17 (line in Coconut source)
-    ):  #17 (line in Coconut source)
+@novotyper.command  #14 (line in Coconut source)
+def genotype(fasta_file,  # type: str  #15 (line in Coconut source)
+    bedgraph_file,  # type: str  #15 (line in Coconut source)
+    vcf_file,  # type: str  #15 (line in Coconut source)
+    sample,  # type: str  #15 (line in Coconut source)
+    out_dir="outputs"  # type: str  #15 (line in Coconut source)
+    ):  #15 (line in Coconut source)
     """
     Predict the genotypes of SVs after running novoSV, and calculate the performance characteristics for prototyping and benchmarking.
 
@@ -3011,23 +3009,23 @@ def genotype(fasta_file,  # type: str  #17 (line in Coconut source)
         The ID of the sample in the VCF to be genotyped.
     out_dir: str
         Path to the directory in which output files will be placed. The output files include `performance.md` (which summarizes the performance characteristics) and `.svg` files showing the distribution of the MAPQ ratio.
-    """  #33 (line in Coconut source)
+    """  #31 (line in Coconut source)
 
-    vcf_info = gt.extract_info_from_vcf(vcf_file, sample)  #35 (line in Coconut source)
-    mapq_bedgraph = gt.read_mapq_bedgraph(bedgraph_file)  #36 (line in Coconut source)
+    vcf_info = gt.extract_info_from_vcf(vcf_file, sample)  #33 (line in Coconut source)
+    mapq_bedgraph = gt.read_mapq_bedgraph(bedgraph_file)  #34 (line in Coconut source)
 
-    test_locs = ((gt.get_pass_variants)((_coconut_complex_partial(gt.add_vcf_info_to_test_locs, {1: vcf_info}, 2, ()))((gt.join_ref_and_sv_locs)(*(lift(_coconut_comma_op)(gt.extract_ref_locs_of_alts, gt.extract_sv_locs))((gt.read_alts_fasta_descriptions)(fasta_file))))))  #38 (line in Coconut source)
+    test_locs = ((gt.get_pass_variants)((_coconut_complex_partial(gt.add_vcf_info_to_test_locs, {1: vcf_info}, 2, ()))((gt.join_ref_and_sv_locs)(*(lift(_coconut_comma_op)(gt.extract_ref_locs_of_alts, gt.extract_sv_locs))((gt.read_alts_fasta_descriptions)(fasta_file))))))  #36 (line in Coconut source)
 
-    ratio_results = ((_coconut_complex_partial(gt.predict_genotype, {1: 0.2, 2: 2.8}, 3, ()))((gt.join_and_calculate_mapq_ratio)(test_locs, *(map)(_coconut_complex_partial(gt.calculate_mapq, {1: mapq_bedgraph}, 2, ()), (lift(_coconut_comma_op)(gt.get_ref_test_locs, gt.get_alt_test_locs))(test_locs)))))  #47 (line in Coconut source)
+    ratio_results = ((_coconut_complex_partial(gt.predict_genotype, {1: 0.2, 2: 2.8}, 3, ()))((gt.join_and_calculate_mapq_ratio)(test_locs, *(map)(_coconut_complex_partial(gt.calculate_mapq, {1: mapq_bedgraph}, 2, ()), (lift(_coconut_comma_op)(gt.get_ref_test_locs, gt.get_alt_test_locs))(test_locs)))))  #45 (line in Coconut source)
 
-    gt.calculate_performance(ratio_results, "{_coconut_format_0}/performance.md".format(_coconut_format_0=(out_dir)))  #55 (line in Coconut source)
-    gt.plot_mapq_distribution(ratio_results, out_dir)  #56 (line in Coconut source)
-
-
-
-def main():  #59 (line in Coconut source)
-    novotyper()  #60 (line in Coconut source)
+    gt.calculate_performance(ratio_results, "{_coconut_format_0}/performance.md".format(_coconut_format_0=(out_dir)))  #53 (line in Coconut source)
+    gt.plot_mapq_distribution(ratio_results, out_dir)  #54 (line in Coconut source)
 
 
-if __name__ == "__main__":  #62 (line in Coconut source)
-    main()  #63 (line in Coconut source)
+
+def main():  #57 (line in Coconut source)
+    novotyper()  #58 (line in Coconut source)
+
+
+if __name__ == "__main__":  #60 (line in Coconut source)
+    main()  #61 (line in Coconut source)

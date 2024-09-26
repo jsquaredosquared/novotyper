@@ -1,0 +1,26 @@
+# reference: 
+#   HG002: "/export/home/jeffrey/Documents/sv-benchmarking/resources/reference-genome/GRCh37/hs37d5.fa"
+#   HG00513: "/export/home/jeffrey/Documents/novocraft-prototype-sv-genotyper/resources/reference-genome/hg38.no_alt.fa.gz"
+
+reference: "/export/home/jeffrey/Documents/novocraft-prototype-sv-genotyper/resources/reference-genome/hg38.no_alt.fa.gz"
+
+context: 900
+min_var_len: 50
+
+novosv: "/export/home/jeffrey/.local/bin/novoSV"
+novoindex: "/export/home/jeffrey/.local/bin/novocraft/novoindex"
+novoutil: "/export/home/jeffrey/.local/bin/novocraft/novoutil"
+novoalign: "/export/home/jeffrey/.local/bin/novocraft/novoalign"
+novosort: "/export/home/jeffrey/.local/bin/novocraft/novosort"
+
+samples:
+  # HG002:
+  #   - "/export/home/jeffrey/Documents/sv-benchmarking/resources/samples/HG002/HG002_HiSeq30x_subsampled_R1.fastq.gz"
+  #   - "/export/home/jeffrey/Documents/sv-benchmarking/resources/samples/HG002/HG002_HiSeq30x_subsampled_R2.fastq.gz"
+  HG00513:
+    - "/export/home/jeffrey/Documents/novocraft-prototype-sv-genotyper/resources/samples/ERR899715_1.fastq.gz"
+    - "/export/home/jeffrey/Documents/novocraft-prototype-sv-genotyper/resources/samples/ERR899715_2.fastq.gz"
+
+truth_set_vcf:
+  # HG002: "/export/home/jeffrey/Documents/novocraft-prototype-sv-caller/resources/sv-vcf-files/HG002_SVs_Tier1_v0.6.ALL.vcf"
+  HG00513: "/export/home/jeffrey/Documents/novocraft-prototype-sv-genotyper/resources/sv-vcf-files/freeze3.sv.alt.vcf"

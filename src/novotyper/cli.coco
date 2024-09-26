@@ -1,8 +1,6 @@
 from cyclopts import App
-from . import genotyper as gt
+from novotyper import genotyper as gt
 
-
-gt.say_hello()
 
 fasta_path = "/export/home/jeffrey/Documents/novocraft-prototype-sv-genotyper/previous_outputs/alt_scaffolds.fa"
 vcf_path = "/export/home/jeffrey/Documents/novocraft-prototype-sv-genotyper/resources/sv-vcf-files/HG002_SVs_Tier1_v0.6.ALL.vcf"
@@ -14,7 +12,7 @@ novotyper = App()
 
 
 @novotyper.command
-def genotype(fasta_file: str, bedgraph_file: str, vcf_file: str, sample: str, out_dir: str):
+def genotype(fasta_file: str, bedgraph_file: str, vcf_file: str, sample: str, out_dir: str="outputs"):
     """
     Predict the genotypes of SVs after running novoSV, and calculate the performance characteristics for prototyping and benchmarking.
 

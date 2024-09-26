@@ -1,1 +1,108 @@
+from os.path import basename
+
 configfile: "config/config.yaml"
+
+
+# Must be run locally because novoSV does not work in HPC.
+localrules:
+    make_alt_scaffolds,
+    make_bedgraph_file,
+
+
+rule all:
+    input:
+        collect("outputs/{sample}/{sample}.sv.sorted.bedgraph", sample=config["samples"]),
+
+
+rule make_alt_scaffolds:
+    input:
+        sv_vcf=lambda wildcards: config["truth_set_vcf"][wildcards.sample],
+    output:
+        alt_scaffolds_fasta="outputs/{sample}.alt_scaffolds.fa",
+    params:
+        context=config["context"],
+        min_var_len=config["min_var_len"],
+    log:
+        "logs/make_alt_scaffolds_for_{sample}.log",
+    shell:
+        "{config[novosv]} vcf2altscaffold "
+        "-c {params.context} "
+        "-v {params.min_var_len} "
+        "--nix {config[reference]}.nix "
+        "{input} "
+        "> {output} "
+        "2> {log}"
+
+
+rule run_novoindex:
+    input:
+        "outputs/{sample}.alt_scaffolds.fa",
+    output:
+        new_novoindex=f"outputs/{sample}.{basename(config["reference"].replace(".fa", ".sv.nix"))},
+    log:
+        "logs/novoindex_{sample}.log",
+    shell:
+        "{config[novoindex]} "
+        "{output.new_novoindex} "
+        "{config[reference]} "
+        "{input} "
+        "2> {log}"
+
+
+rule samtools_faidx:
+    input:
+        "outputs/{sample}.alt_scaffolds.fa",
+    output:
+        new_fasta_gz=f"outputs/{sample}.{basename(config["reference"].replace(".fa", ".sv.fa.gz"))}",
+    conda:
+        "envs/samtools.yaml"
+    log:
+        "logs/samtools_faidx_{sample}.log",
+    threads: 8
+    shell:
+        "(cat {config[reference]} {input} | "
+        "{config[novoutil]} bgzf - "
+        "> {output.new_fasta_gz} "
+        "&& samtools faidx {output.new_fasta_gz} "
+        ")2> {log}"
+
+
+rule align_sample:
+    input:
+        reads=lambda wildcards: config["samples"][wildcards.sample],
+        alt_index=f"outputs/{sample}.{basename(config["reference"].replace(".fa", ".sv.nix"))},
+    output:
+        "outputs/{sample}.sv.bam",
+    threads: 60
+    log:
+        "logs/align_{sample}.log",
+    shell:
+        "({config[novoalign]} -c {threads} -d {input.alt_index} "
+        "-f {input.reads} "
+        "-o BAM '@RG\tID:{wildcards.sample}\tSM:{wildcards.sample}\tPL:ILLUMINA\tLB:sv' "
+        "| {config[novosort]} -m 8G -i -o {output} - "
+        ")2> {log}"
+
+
+rule make_bedgraph_file:
+    input:
+        bam_file="outputs/{sample}.sv.bam",
+        alt_scaffolds_fasta="outputs/{sample}.alt_scaffolds.fa",
+        alt_index=f'outputs/{sample}.{basename(config["reference"].replace(".fa", ".sv.nix"))}',
+    output:
+        bedgraph_file=multiext(
+            "outputs/{sample}.sv", ".bedgraph", ".sorted.bedgraph"
+        ),
+
+    log:
+        "logs/make_bedgraph_file_{sample}.log",
+    shell:
+        "({config[novosv]} zabedgraph "
+        "-a {input.alt_scaffolds_fasta} "
+        "-b {input.bam_file} "
+        "> {output.bedgraph_file[0]} "
+        "&& {config[novoutil]} headers {{input.alt_index}} "
+        "| awk 'NR > 1 {{print substr($4,2),$2}}' > chrom.sizes "
+        "&& awk '$1 == \"track\" {{print; exit}}' {output.bedgraph_file[0]} > {output.bedgraph_file[1]} "
+        '&& awk \'$1 == "#" || $1 == "track" {{next}} {{print}}\' {output.bedgraph_file[0]} | LC_ALL=C sort -k1,1 -k2,2n >> {output.bedgraph_file[1]} '
+        ")2> {log}"

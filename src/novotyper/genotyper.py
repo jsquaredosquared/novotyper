@@ -289,7 +289,3 @@ def plot_mapq_distribution(results: pd.DataFrame, out_dir: str) -> None:
     overview_chart.save(f"{out_dir}/overview_chart.svg")
     sqrt_chart.save(f"{out_dir}/sqrt_chart.svg")
     cbrt_chart.save(f"{out_dir}/cbrt_chart.svg")
-
-
-def say_hello():
-    print("Hello from genotyper!")
