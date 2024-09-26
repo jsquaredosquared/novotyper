@@ -39,3 +39,6 @@ packages = ["src/novotyper"]
 addopts = [
     "--import-mode=importlib",
 ]
+
+[project.scripts]
+novotyper = 'novotyper:main'
