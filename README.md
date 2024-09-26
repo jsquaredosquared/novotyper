@@ -5,14 +5,16 @@ This repository contains the code used during the development of a prototype str
 ## Usage
 
 1. Obtain a VCF of the structural variants you would like to genotype.
+
 2. Run the Snakemake workflow found in `workflow/Snakefile`.
     - Modify the `config/config.yaml` file to point to the correct locations for each input file and executable.
-    - The workflow should perform the following files (but you could run them yourself):
+    - The workflow should perform the following steps (but you could run them yourself):
         - `novoSV vcf2altscaffold`: Use the SVs from the VCF file and the reference `.nix` file to generate a FASTA file containing the alt scaffolds.
         - `novoindex`: Index the reference fasta + alt scaffolds fasta to create a new spiked `.nix` file.
         - `novoalign`: Produce the BAM file by aligning the reads using the new `.nix` file.
         - `novoSV zabedgraph`: Use the alt scaffolds FASTA and the BAM file to obtain the MAPQ as a bedgraph.
         - [OPTIONAL] `novoutil bgzf`: Combine reference fasta + alt scaffolds fasta into a new fasta file, and index it with `samtools faidx`. Do this if you would like to visualize the alignments in IGV.
+
 3. Run `novotyper` to predict genotypes and perform some benchmarking.
     - This step requires your SV VCF, plus the alt scaffolds FASTA and MAPQ bedgraph generated in step 2 above.
     - Clone this repository, and run `pip install .` in the virtual environment in which you wish to install `novotyper`.
@@ -21,7 +23,7 @@ This repository contains the code used during the development of a prototype str
 ## Report
 
 - For a basic description of how the reasoning behind each step and the findings made during prototyping, please see `notebooks/report.md`.
-- If you want to know how `novotyper` works, a jupyter notebook has been provided in `notebooks/novotyper.ipynb`. Each cell corresponds to a function which you can run to see its output.
+- If you want to know how `novotyper` works step by step, check out `notebooks/novotyper.ipynb`. Each cell corresponds to a function which you can run to see its output.
 - The functions are as follows:
 
     ```coconut
