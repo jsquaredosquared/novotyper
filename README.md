@@ -22,7 +22,7 @@ This repository contains the code used during the development of a prototype str
 
 ## Report
 
-- For a basic description of how the reasoning behind each step and the findings made during prototyping, please see `notebooks/report.md`.
+- For a basic description of the reasoning behind each step and the findings made during prototyping, please see `notebooks/report.md`.
 - If you want to know how `novotyper` works step by step, check out `notebooks/novotyper.ipynb`. Each cell corresponds to a function which you can run to see its output.
 - The functions are as follows:
 
