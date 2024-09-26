@@ -119,7 +119,7 @@ def extract_info_from_vcf(vcf_file: Path, sample: str) -> pd.DataFrame:
             .str.extract_groups(r"SVTYPE=(\w+);")
             .alias("SVTYPE")
             .struct.rename_fields(["SVTYPE"]),
-            pl.col(sample).str.extract(r"^([\d|.|\/|\|]*):").alias("GT"),
+            pl.col(sample).str.extract(r"^([\d.\/\|]*):").alias("GT"),
         )
         .unnest(["SVLEN", "SVTYPE"])
         .select(["FILTER", "GT", "SVLEN", "SVTYPE"])
@@ -214,7 +214,8 @@ def predict_genotype(
     predictions["GT_unphased"] = predictions["GT"].map(
         {"0|0": "0/0", "0|1": "0/1", "1|0": "0/1", "1|1": "1/1"}
     )
-    predictions["GT_concordance"] = predictions["prediction"] == predictions["GT"]
+    
+    predictions["GT_concordance"] = predictions["prediction"] == predictions["GT_unphased"]
 
     return predictions
 
@@ -232,7 +233,7 @@ def calculate_performance(predictions: pd.DataFrame, out_file: str) -> None:
     )
 
     contingency_table = pd.crosstab(
-        predictions["GT"], predictions["prediction"], normalize="index"
+        predictions["GT_unphased"], predictions["prediction"], normalize="index"
     )
 
     with open(out_file, "w") as file:
