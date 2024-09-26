@@ -214,8 +214,10 @@ def predict_genotype(
     predictions["GT_unphased"] = predictions["GT"].map(
         {"0|0": "0/0", "0|1": "0/1", "1|0": "0/1", "1|1": "1/1"}
     )
-    
-    predictions["GT_concordance"] = predictions["prediction"] == predictions["GT_unphased"]
+
+    predictions["GT_concordance"] = (
+        predictions["prediction"] == predictions["GT_unphased"]
+    )
 
     return predictions
 
