@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# __coconut_hash__ = 0xc1f1f237
+# __coconut_hash__ = 0x578009d5
 
 # Compiled with Coconut version 3.1.2
 
@@ -3014,18 +3014,22 @@ def genotype(sv_vcf,  # type: str  #15 (line in Coconut source)
     vcf_info = gt.extract_info_from_vcf(sv_vcf, sample)  #33 (line in Coconut source)
     mapq_bedgraph = gt.read_mapq_bedgraph(mapq_bedgraph)  #34 (line in Coconut source)
 
-    test_locs = ((gt.get_pass_variants)((_coconut_complex_partial(gt.add_vcf_info_to_test_locs, {1: vcf_info}, 2, ()))((gt.join_ref_and_sv_locs)(*(lift(_coconut_comma_op)(gt.extract_ref_locs_of_alts, gt.extract_sv_locs))((gt.read_alts_fasta_descriptions)(alts_fasta))))))  #36 (line in Coconut source)
+    test_locs = ((gt.get_pass_variants)((_coconut_complex_partial(gt.add_vcf_info_to_test_locs, {1: vcf_info}, 2, ()))((gt.define_alt_test_locs)((gt.join_ref_and_sv_locs)(*(lift(_coconut_comma_op)(gt.extract_ref_locs_of_alts, gt.extract_sv_locs))((gt.read_alts_fasta_descriptions)(alts_fasta)))))))  #36 (line in Coconut source)
 
-    ratio_results = ((_coconut_complex_partial(gt.predict_genotype, {1: 0.2, 2: 2.8}, 3, ()))((gt.join_and_calculate_mapq_ratio)(test_locs, *(map)(_coconut_complex_partial(gt.calculate_mapq, {1: mapq_bedgraph}, 2, ()), (lift(_coconut_comma_op)(gt.get_ref_test_locs, gt.get_alt_test_locs))(test_locs)))))  #45 (line in Coconut source)
+    ratio_results = ((_coconut_complex_partial(gt.predict_genotype, {1: 0.2, 2: 2.8}, 3, ()))((gt.join_and_calculate_mapq_ratio)(test_locs, *(map)(_coconut_complex_partial(gt.calculate_mapq, {1: mapq_bedgraph}, 2, ()), (lift(_coconut_comma_op)(gt.get_ref_test_locs, gt.get_alt_test_locs))(test_locs)))))  #46 (line in Coconut source)
 
-    gt.calculate_performance(ratio_results, out_dir)  #53 (line in Coconut source)
-    gt.plot_mapq_distribution(ratio_results, out_dir)  #54 (line in Coconut source)
+    (print)(gt.calculate_performance(ratio_results), file="{_coconut_format_0}/summary.md".format(_coconut_format_0=(out_dir)))  #54 (line in Coconut source)
+
+    mapq_chart, mapq_chart_detailed, sqrt_mapq_chart, cbrt_mapq_chart = plot_mapq_distribution(results)  #56 (line in Coconut source)
+    mapq_chart.save("{_coconut_format_0}/mapq_chart.svg".format(_coconut_format_0=(out_dir)))  #57 (line in Coconut source)
+    mapq_chart_detailed.save("{_coconut_format_0}/mapq_chart_detailed.svg".format(_coconut_format_0=(out_dir)))  #58 (line in Coconut source)
+    sqrt_mapq_chart.save("{_coconut_format_0}/sqrt_mapq_chart.svg".format(_coconut_format_0=(out_dir)))  #59 (line in Coconut source)
+    cbrt_mapq_chart.save("{_coconut_format_0}/cbrt_mapq_chart.svg".format(_coconut_format_0=(out_dir)))  #60 (line in Coconut source)
 
 
+def main():  #62 (line in Coconut source)
+    novotyper()  #63 (line in Coconut source)
 
-def main():  #57 (line in Coconut source)
-    novotyper()  #58 (line in Coconut source)
 
-
-if __name__ == "__main__":  #60 (line in Coconut source)
-    main()  #61 (line in Coconut source)
+if __name__ == "__main__":  #65 (line in Coconut source)
+    main()  #66 (line in Coconut source)

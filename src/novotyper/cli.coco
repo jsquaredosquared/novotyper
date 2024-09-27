@@ -38,6 +38,7 @@ def genotype(sv_vcf: str, alts_fasta: str, mapq_bedgraph: str, sample: str, out_
         |> gt.read_alts_fasta_descriptions
         |> lift(,)(gt.extract_ref_locs_of_alts, gt.extract_sv_locs)
         |*> gt.join_ref_and_sv_locs
+        |> gt.define_alt_test_locs
         |> gt.add_vcf_info_to_test_locs$(?, vcf_info)
         |> gt.get_pass_variants
     )
@@ -50,9 +51,13 @@ def genotype(sv_vcf: str, alts_fasta: str, mapq_bedgraph: str, sample: str, out_
         |> gt.predict_genotype$(?, 0.2, 2.8)
     )
 
-    gt.calculate_performance(ratio_results, out_dir)
-    gt.plot_mapq_distribution(ratio_results, out_dir)
-
+    gt.calculate_performance(ratio_results) |> print$(file=f"{out_dir}/summary.md")
+    
+    mapq_chart, mapq_chart_detailed, sqrt_mapq_chart, cbrt_mapq_chart = plot_mapq_distribution(results)
+    mapq_chart.save(f"{out_dir}/mapq_chart.svg")
+    mapq_chart_detailed.save(f"{out_dir}/mapq_chart_detailed.svg")
+    sqrt_mapq_chart.save(f"{out_dir}/sqrt_mapq_chart.svg")
+    cbrt_mapq_chart.save(f"{out_dir}/cbrt_mapq_chart.svg")
 
 def main():
     novotyper()

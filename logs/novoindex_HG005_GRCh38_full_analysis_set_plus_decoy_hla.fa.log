@@ -1,0 +1,6 @@
+# novoindex (4.4) - Universal k-mer index constructor.
+# (C) 2008 - 2011 NovoCraft Technologies Sdn Bhd
+# novoindex outputs/HG005/GRCh38_full_analysis_set_plus_decoy_hla.fa.sv.nix resources/reference-genomes/GRCh38_full_analysis_set_plus_decoy_hla.fa outputs/HG005/alt_scaffolds.fa 
+# Creating 39 indexing threads.
+# Building with 15-mer and step of 2 bp.
+Error: Invalid NA code in outputs/HG005/alt_scaffolds.fa at line 5288.

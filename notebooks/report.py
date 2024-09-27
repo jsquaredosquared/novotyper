@@ -1,6 +1,6 @@
 import marimo
 
-__generated_with = "0.8.18"
+__generated_with = "0.8.19"
 app = marimo.App(width="medium")
 
 
@@ -55,8 +55,8 @@ def __(mo):
 
 
 @app.cell
-def __(overview_charts):
-    overview_charts
+def __(mapq_chart, mapq_chart_detailed):
+    mapq_chart | mapq_chart_detailed
     return
 
 
@@ -73,22 +73,14 @@ def __(mo):
 
 
 @app.cell
-def __(root_charts):
-    root_charts
+def __(cbrt_mapq_chart, sqrt_mapq_chart):
+    sqrt_mapq_chart | cbrt_mapq_chart
     return
 
 
 @app.cell
 def __(mo):
-    mo.md(
-        r"""- Zooming in on distirbution of $R_{\text{MAPQ}}$ to select reasonable cutoffs."""
-    )
-    return
-
-
-@app.cell
-def __(initial_charts):
-    initial_charts
+    mo.md(r"""- Zoom in on distirbution of $R_{\text{MAPQ}}$ to select reasonable cutoffs.""")
     return
 
 
@@ -112,20 +104,8 @@ def __(mo):
 
 
 @app.cell
-def __(contingency_table, mo):
-    mo.md(contingency_table.to_markdown())
-    return
-
-
-@app.cell
-def __(correct_predictions_by_sizecat):
-    correct_predictions_by_sizecat
-    return
-
-
-@app.cell
-def __(correct_predictions_by_svtype):
-    correct_predictions_by_svtype
+def __(mo, performance):
+    mo.md(performance)
     return
 
 
@@ -188,7 +168,7 @@ def __(mo):
             - Taking into consideration the uniqueness of read mapping and alignment counts for genotyping.
         - What would be the advantages of novoSV?
             - Can it be used to improve the precision of other SV callers by a significant amount?
-     
+
         ## Limitations
 
         - This method is limited to trying to detect and genotype known SVs.
@@ -209,20 +189,20 @@ def __(mo):
 @app.cell
 def __():
     import marimo as mo
-
     return (mo,)
 
 
 @app.cell
 def __():
+    import re
+
     import pandas as pd
     import pyranges as pr
     import polars as pl
     import bioframe as bf
     import numpy as np
     import altair as alt
-
-    return alt, bf, np, pd, pl, pr
+    return alt, bf, np, pd, pl, pr, re
 
 
 @app.cell
@@ -237,20 +217,32 @@ def __(mo):
     return
 
 
-@app.cell(hide_code=True)
-def __(pl):
-    alt_to_ref = pl.read_csv(
-        "../previous_outputs/HG002/alt_to_ref.txt",
-        separator=" ",
-        has_header=False,
-        new_columns=["alt_contig", "ref_loc", "alt_len"],
-    ).with_columns(
-        pl.col("alt_contig").str.replace(">", ""),
-        pl.col("ref_loc").str.replace("rg:", ""),
-    )
+@app.cell
+def __(Path, pl, re):
+    def read_alts_fasta_descriptions(alts_fasta: Path) -> pl.DataFrame:
+        with open(alts_fasta, "r") as file:
+            records = re.findall(r">([\d\w_]+) LN:(\d+) .+ rg:([\d\w:-]+)", file.read())
 
-    alt_to_ref.head()
-    return (alt_to_ref,)
+            fields: dict[str, list] = {
+                "alt_contig": [],
+                "ref_loc": [],
+                "alt_contig_len": [],
+            }
+
+            for record in records:
+                fields["alt_contig"].append(record[0])
+                fields["alt_contig_len"].append(record[1])
+                fields["ref_loc"].append(record[2])
+
+            data = pl.DataFrame(fields)
+
+        return data
+
+
+    alts_fasta_desc = read_alts_fasta_descriptions("outputs/HG002/alt_scaffolds.fa")
+
+    alts_fasta_desc.head()
+    return alts_fasta_desc, read_alts_fasta_descriptions
 
 
 @app.cell
@@ -260,15 +252,22 @@ def __(mo):
 
 
 @app.cell
-def __(alt_to_ref, bf, pd, pr):
-    ref_locs = bf.from_any(alt_to_ref.to_series(1).to_list())
-    ref_locs["alt_contig"] = pd.Series(alt_to_ref.to_series(0).to_list())
-    ref_locs_pr = pr.PyRanges(
-        ref_locs.rename(columns={"chrom": "Chromosome", "start": "Start", "end": "End"})
-    )
+def __(alts_fasta_desc, bf, pd, pl, pr):
+    def extract_ref_locs_of_alts(data: pl.DataFrame) -> pr.PyRanges:
+        ref_locs_bf = bf.from_any(data.to_series(1).to_list())
+        ref_locs_bf["alt_contig"] = pd.Series(data.to_series(0).to_list())
+        ref_locs_of_alts = pr.PyRanges(
+            ref_locs_bf.rename(
+                columns={"chrom": "Chromosome", "start": "Start", "end": "End"}
+            )
+        )
 
-    ref_locs_pr
-    return ref_locs, ref_locs_pr
+        return ref_locs_of_alts
+
+
+    ref_locs = extract_ref_locs_of_alts(alts_fasta_desc)
+    ref_locs.head()
+    return extract_ref_locs_of_alts, ref_locs
 
 
 @app.cell(hide_code=True)
@@ -278,23 +277,28 @@ def __(mo):
 
 
 @app.cell
-def __(alt_to_ref, pl, pr):
-    sv_locs_pr = pr.PyRanges(
-        alt_to_ref.select("alt_contig", "alt_len")
-        .with_columns(
-            pl.col("alt_contig")
-            .str.extract_groups(r"(\d+|\w+)_(\d+)_(\d+)_\d")
-            .struct.rename_fields(["Chromosome", "Start", "End"])
-            .alias("alt_contig_locs"),
-            pl.col("alt_len").str.extract(r"LN:(\d+)").str.to_integer(),
+def __(alts_fasta_desc, pl, pr):
+    def extract_sv_locs(data: pl.DataFrame) -> pr.PyRanges:
+        sv_locs = pr.PyRanges(
+            data.select("alt_contig", "alt_contig_len")
+            .with_columns(
+                pl.col("alt_contig")
+                .str.extract_groups(r"(\d+|\w+)_(\d+)_(\d+)_\d")
+                .struct.rename_fields(["Chromosome", "Start", "End"])
+                .alias("alt_contig_locs"),
+                pl.col("alt_contig_len").str.to_integer(),
+            )
+            .unnest("alt_contig_locs")
+            .with_columns(pl.col(["Start", "End"]).str.to_integer())
+            .to_pandas()
         )
-        .unnest("alt_contig_locs")
-        .with_columns(pl.col(["Start", "End"]).str.to_integer())
-        .to_pandas()
-    )
 
-    sv_locs_pr
-    return (sv_locs_pr,)
+        return sv_locs
+
+
+    sv_locs = extract_sv_locs(alts_fasta_desc)
+    sv_locs.head()
+    return extract_sv_locs, sv_locs
 
 
 @app.cell(hide_code=True)
@@ -304,13 +308,20 @@ def __(mo):
 
 
 @app.cell
-def __(ref_locs_pr, sv_locs_pr):
-    locs = sv_locs_pr.df.join(ref_locs_pr.df, rsuffix="_ref").drop(
-        columns=["alt_contig_ref", "Chromosome_ref"]
-    )
+def __(pd, pr, ref_locs, sv_locs):
+    def join_ref_and_sv_locs(
+        ref_locs_of_alts: pr.PyRanges, sv_locs: pr.PyRanges
+    ) -> pd.DataFrame:
+        locs = sv_locs.df.join(ref_locs_of_alts.df, rsuffix="_ref").drop(
+            columns=["alt_contig_ref", "Chromosome_ref"]
+        )
 
-    locs
-    return (locs,)
+        return locs
+
+
+    locs = join_ref_and_sv_locs(ref_locs, sv_locs)
+    locs.head()
+    return join_ref_and_sv_locs, locs
 
 
 @app.cell
@@ -320,21 +331,26 @@ def __(mo):
 
 
 @app.cell
-def __(locs, np):
-    test_locs_pr = locs.copy()
+def __(locs, np, pd):
+    def define_alt_test_locs(locs: pd.DataFrame) -> pd.DataFrame:
+        test_locs = locs.copy()
 
-    # Get size of context to determine where on alt to start testing
-    test_locs_pr["Start_alt_test"] = test_locs_pr["Start"] - test_locs_pr["Start_ref"]
+        # Get size of context to determine where on alt to start testing
+        test_locs["Start_alt_test"] = test_locs["Start"] - test_locs["Start_ref"]
 
-    # Determine where to end testing
-    test_locs_pr["End_alt_test"] = np.where(
-        test_locs_pr["alt_len"] == 1801,
-        test_locs_pr["Start"] + 1 - test_locs_pr["Start_ref"],
-        test_locs_pr["Start_alt_test"] + (test_locs_pr["alt_len"] - 1801),
-    )
+        # Determine where to end testing
+        test_locs["End_alt_test"] = np.where(
+            test_locs["alt_contig_len"] == 1801,
+            test_locs["Start"] + 1 - test_locs["Start_ref"],
+            test_locs["Start_alt_test"] + test_locs["alt_contig_len"] - 1801,
+        )
 
-    test_locs_pr
-    return (test_locs_pr,)
+        return test_locs
+
+
+    test_locs = define_alt_test_locs(locs)
+    test_locs.head()
+    return define_alt_test_locs, test_locs
 
 
 @app.cell
@@ -344,69 +360,75 @@ def __(mo):
 
 
 @app.cell
-def __(pl):
-    vcf = (
-        pl.read_csv(
-            "../resources/sv-vcf-files/HG002_SVs_Tier1_v0.6.ALL.vcf",
-            separator="\t",
-            comment_prefix="#",
-            has_header=False,
-            new_columns=[
-                "CHROM",
-                "POS",
-                "ID",
-                "REF",
-                "ALT",
-                "QUAL",
-                "FILTER",
-                "INFO",
-                "FORMAT",
-                "HG002",
-            ],
-            schema_overrides={"CHROM": pl.String},
+def __(Path, pd, pl):
+    def extract_info_from_vcf(vcf_file: Path, sample: str) -> pd.DataFrame:
+        vcf = (
+            pl.read_csv(
+                vcf_file,
+                separator="\t",
+                comment_prefix="#",
+                has_header=False,
+                new_columns=[
+                    "CHROM",
+                    "POS",
+                    "ID",
+                    "REF",
+                    "ALT",
+                    "QUAL",
+                    "FILTER",
+                    "INFO",
+                    "FORMAT",
+                    sample,
+                ],
+                schema_overrides={"CHROM": pl.String},
+            )
+            .with_columns(
+                pl.col("INFO")
+                .str.extract_groups(r"SVLEN=([-\d]+);")
+                .cast(pl.Int32)
+                .alias("SVLEN")
+                .struct.rename_fields(["SVLEN"]),
+                pl.col("INFO")
+                .str.extract_groups(r"SVTYPE=(\w+);")
+                .alias("SVTYPE")
+                .struct.rename_fields(["SVTYPE"]),
+                pl.col(sample).str.extract(r"^([\d.\/\|]*):").alias("GT"),
+            )
+            .unnest(["SVLEN", "SVTYPE"])
+            .select(["FILTER", "GT", "SVLEN", "SVTYPE"])
+            .to_pandas()
         )
-        .with_columns(
-            pl.col("INFO")
-            .str.extract_groups(r"sizecat=([\w\d]+);")
-            .alias("SIZECAT")
-            .struct.rename_fields(["SIZECAT"]),
-            pl.col("INFO")
-            .str.extract_groups(r"SVLEN=([-\d]+);")
-            .cast(pl.Int32)
-            .alias("SVLEN")
-            .struct.rename_fields(["SVLEN"]),
-            pl.col("INFO")
-            .str.extract_groups(r"SVTYPE=(\w+);")
-            .alias("SVTYPE")
-            .struct.rename_fields(["SVTYPE"]),
-            pl.col("HG002").str.extract(r"^([\d|.|\/]*):").alias("GT"),
-        )
-        .unnest(["SIZECAT", "SVLEN", "SVTYPE"])
-    )
 
-    vcf
-    return (vcf,)
+        return vcf
+
+
+    vcf_info = extract_info_from_vcf("resources/HG002/HG002_SVs_Tier1_v0.6.ALL.vcf", "HG002")
+    vcf_info.head()
+    return extract_info_from_vcf, vcf_info
 
 
 @app.cell
-def __(vcf):
-    vcf_filter_and_gt = vcf.select(
-        ["FILTER", "GT", "SVLEN", "SIZECAT", "SVTYPE"]
-    ).to_pandas()
+def __(pd, test_locs, vcf_info):
+    def add_vcf_info_to_test_locs(locs: pd.DataFrame, vcf: pd.DataFrame) -> pd.DataFrame:
+        locs_with_info = pd.concat([locs, vcf], axis=1)
+        locs_with_info.insert(1, "alt_start", [0] * locs_with_info.shape[0])
+        return locs_with_info
 
-    vcf_filter_and_gt
-    return (vcf_filter_and_gt,)
+
+    test_locs_with_info = add_vcf_info_to_test_locs(test_locs, vcf_info)
+    test_locs_with_info.head()
+    return add_vcf_info_to_test_locs, test_locs_with_info
 
 
 @app.cell
-def __(pd, test_locs_pr, vcf_filter_and_gt):
-    test_locs_with_gt = pd.concat([test_locs_pr, vcf_filter_and_gt], axis=1)
-    test_locs_with_gt.insert(1, "alt_start", [0] * test_locs_with_gt.shape[0])
+def __(pd, test_locs_with_info):
+    def get_pass_variants(locs: pd.DataFrame) -> pd.DataFrame:
+        return locs.query('FILTER == "PASS" or FILTER == "."')
+        
 
-    test_locs_with_gt = test_locs_with_gt.query('FILTER == "PASS"')
-
-    test_locs_with_gt
-    return (test_locs_with_gt,)
+    test_locs_with_info_pass_only = get_pass_variants(test_locs_with_info)
+    test_locs_with_info_pass_only
+    return get_pass_variants, test_locs_with_info_pass_only
 
 
 @app.cell
@@ -416,24 +438,31 @@ def __(mo):
 
 
 @app.cell
-def __(test_locs_with_gt):
-    ref_test_locs = test_locs_with_gt[["alt_contig", "Chromosome", "Start", "End"]]
+def __(pd, test_locs_with_info_pass_only):
+    def get_ref_test_locs(test_locs: pd.DataFrame) -> pd.DataFrame:
+        return test_locs.copy()[["alt_contig", "Chromosome", "Start", "End"]]
+
+
+    ref_test_locs = get_ref_test_locs(test_locs_with_info_pass_only)
     ref_test_locs
-    return (ref_test_locs,)
+    return get_ref_test_locs, ref_test_locs
 
 
 @app.cell
-def __(test_locs_with_gt):
-    alt_test_locs = test_locs_with_gt.copy()
+def __(pd, test_locs_with_info_pass_only):
+    def get_alt_test_locs(test_locs: pd.DataFrame) -> pd.DataFrame:
+        alt_test_locs = test_locs.copy()
+        alt_test_locs["Chromosome"] = alt_test_locs["alt_contig"]
+        alt_test_locs = alt_test_locs.copy()[
+            ["alt_contig", "Chromosome", "Start_alt_test", "End_alt_test"]
+        ].rename(columns={"Start_alt_test": "Start", "End_alt_test": "End"})
 
-    alt_test_locs["Chromosome"] = alt_test_locs["alt_contig"]
+        return alt_test_locs
 
-    alt_test_locs = alt_test_locs[
-        ["alt_contig", "Chromosome", "Start_alt_test", "End_alt_test"]
-    ].rename(columns={"Start_alt_test": "Start", "End_alt_test": "End"})
 
+    alt_test_locs = get_alt_test_locs(test_locs_with_info_pass_only)
     alt_test_locs
-    return (alt_test_locs,)
+    return alt_test_locs, get_alt_test_locs
 
 
 @app.cell
@@ -442,23 +471,24 @@ def __(mo):
     return
 
 
-@app.cell(hide_code=True)
-def __(pd, pr):
-    mapq_bedgraph = pd.read_csv(
-        "../previous_outputs/HG002/HG002.sv.sorted.bedgraph",
-        sep=" ",
-        header=0,
-        skiprows=1,
-        names=["Chromosome", "Start", "End", "MAPQ"],
-        dtype={
-            "Chromosome": str,
-        },
-    )
+@app.cell
+def __(Path, pd, pr):
+    def read_mapq_bedgraph(bedgraph_file: Path) -> pr.PyRanges:
+        bedgraph: pd.DataFrame = pd.read_csv(
+            bedgraph_file,
+            sep=" ",
+            header=0,
+            skiprows=1,
+            names=["Chromosome", "Start", "End", "MAPQ"],
+            dtype={"Chromosome": str},
+        )
 
-    mapq_bedgraph_pr = pr.PyRanges(mapq_bedgraph)
+        return pr.PyRanges(bedgraph)
 
-    mapq_bedgraph_pr
-    return mapq_bedgraph, mapq_bedgraph_pr
+
+    mapq_bedgraph = read_mapq_bedgraph("outputs/HG002/sv.sorted.bedgraph")
+    mapq_bedgraph
+    return mapq_bedgraph, read_mapq_bedgraph
 
 
 @app.cell
@@ -468,17 +498,20 @@ def __(mo):
 
 
 @app.cell
-def __(mapq_bedgraph_pr, pr, ref_test_locs):
-    ref_mapq = (
-        pr.PyRanges(ref_test_locs)
-        .extend(100)
-        .join(mapq_bedgraph_pr)
-        .df.groupby("alt_contig")
-        .agg({"MAPQ": "mean"})
-    )
+def __(mapq_bedgraph, pd, pr, ref_test_locs):
+    def calculate_mapq(test_locs: pd.DataFrame, mapq_bedgraph: pd.DataFrame):
+        return (
+            pr.PyRanges(test_locs)
+            .extend(100)
+            .join(mapq_bedgraph)
+            .df.groupby("alt_contig")
+            .agg({"MAPQ": "mean"})
+        )
 
+
+    ref_mapq = calculate_mapq(ref_test_locs, mapq_bedgraph)
     ref_mapq
-    return (ref_mapq,)
+    return calculate_mapq, ref_mapq
 
 
 @app.cell
@@ -488,15 +521,8 @@ def __(mo):
 
 
 @app.cell
-def __(alt_test_locs, mapq_bedgraph_pr, pr):
-    alt_mapq = (
-        pr.PyRanges(alt_test_locs)
-        .extend(100)
-        .join(mapq_bedgraph_pr)
-        .df.groupby("alt_contig")
-        .agg({"MAPQ": "mean"})
-    )
-
+def __(alt_test_locs, calculate_mapq, mapq_bedgraph):
+    alt_mapq = calculate_mapq(alt_test_locs, mapq_bedgraph)
     alt_mapq
     return (alt_mapq,)
 
@@ -507,23 +533,34 @@ def __(mo):
     return
 
 
-@app.cell(hide_code=True)
-def __(alt_mapq, np, ref_mapq, test_locs_with_gt):
-    results = (
-        test_locs_with_gt.set_index("alt_contig")
-        .join(ref_mapq, rsuffix="_ref")
-        .join(alt_mapq, rsuffix="_alt")
-        .reset_index()
-        .set_index(["Chromosome", "Start", "End"])
+@app.cell
+def __(alt_mapq, np, pd, ref_mapq, test_locs_with_info_pass_only):
+    def join_and_calculate_mapq_ratio(
+        locs_with_info: pd.DataFrame, ref_mapq: pd.DataFrame, alt_mapq: pd.DataFrame
+    ):
+        results = (
+            locs_with_info.set_index("alt_contig")
+            .join(ref_mapq, rsuffix="_ref")
+            .join(alt_mapq, rsuffix="_alt")
+            .reset_index()
+            .set_index(["Chromosome", "Start", "End"])
+        )
+
+        results["ratio_alt_to_ref"] = results["MAPQ_alt"] / results["MAPQ"]
+
+        results["sqrt_ratio"] = np.sqrt(results["ratio_alt_to_ref"])
+        results["cbrt_ratio"] = np.cbrt(results["ratio_alt_to_ref"])
+
+        return results
+
+
+    results = join_and_calculate_mapq_ratio(
+        test_locs_with_info_pass_only,
+        ref_mapq,
+        alt_mapq
     )
-
-    results["ratio_alt_to_ref"] = results["MAPQ_alt"] / results["MAPQ"]
-
-    results["sqrt_ratio"] = np.sqrt(results["ratio_alt_to_ref"])
-    results["cbrt_ratio"] = np.cbrt(results["ratio_alt_to_ref"])
-
     results
-    return (results,)
+    return join_and_calculate_mapq_ratio, results
 
 
 @app.cell
@@ -533,148 +570,76 @@ def __(mo):
 
 
 @app.cell
-def __(np):
-    inf = np.inf
-    return (inf,)
+def __(alt, np, pd, results):
+    def plot_mapq_distribution(results: pd.DataFrame) -> tuple[alt.Chart]:
+        inf = np.inf
 
-
-@app.cell
-def __(alt, results):
-    overview_chart = (
-        alt.Chart(
-            results.query("not ratio_alt_to_ref.isna() and ratio_alt_to_ref != @inf")
-        )
-        .mark_line()
-        .encode(
-            alt.X("ratio_alt_to_ref:Q").bin(maxbins=100),
-            y="count()",
-            color=alt.Color("GT"),
-        )
-        .interactive()
-    )
-    return (overview_chart,)
-
-
-@app.cell
-def __(alt, results):
-    overview_chart_more_detail = (
-        alt.Chart(
-            results.query("not ratio_alt_to_ref.isna() and ratio_alt_to_ref != @inf")
-        )
-        .mark_line()
-        .encode(
-            alt.X("ratio_alt_to_ref:Q").bin(maxbins=1000),
-            y="count()",
-            color=alt.Color("GT"),
-        )
-        .interactive()
-    )
-    return (overview_chart_more_detail,)
-
-
-@app.cell
-def __(alt, results):
-    overview_chart_even_more_detail = (
-        alt.Chart(
-            results.query("not ratio_alt_to_ref.isna() and ratio_alt_to_ref != @inf")
-        )
-        .mark_line()
-        .encode(
-            alt.X("ratio_alt_to_ref:Q").bin(maxbins=5000),
-            y="count()",
-            color=alt.Color("GT"),
-        )
-        .interactive()
-    )
-    return (overview_chart_even_more_detail,)
-
-
-@app.cell
-def __(alt, results):
-    ratio_lt_5 = (
-        alt.Chart(
-            results.query(
-                "not ratio_alt_to_ref.isna() and ratio_alt_to_ref != @inf and ratio_alt_to_ref < 5"
+        mapq_chart = (
+            alt.Chart(
+                results.query("not ratio_alt_to_ref.isna() and ratio_alt_to_ref != @inf")
             )
-        )
-        .mark_line()
-        .encode(
-            alt.X("ratio_alt_to_ref:Q").bin(maxbins=100),
-            y="count()",
-            color=alt.Color("GT"),
-        )
-        .interactive()
-    )
-    return (ratio_lt_5,)
-
-
-@app.cell
-def __(alt, results):
-    ratio_ge_5 = (
-        alt.Chart(
-            results.query(
-                "not ratio_alt_to_ref.isna() and ratio_alt_to_ref != @inf and ratio_alt_to_ref > 5"
+            .mark_line()
+            .encode(
+                alt.X("ratio_alt_to_ref:Q").bin(maxbins=100),
+                y="count()",
+                color=alt.Color("GT"),
             )
+            .interactive()
         )
-        .mark_line()
-        .encode(
-            alt.X("ratio_alt_to_ref:Q").bin(maxbins=100),
-            y="count()",
-            color=alt.Color("GT"),
+
+        mapq_chart_detailed = (
+            alt.Chart(
+                results.query("not ratio_alt_to_ref.isna() and ratio_alt_to_ref != @inf")
+            )
+            .mark_line()
+            .encode(
+                alt.X("ratio_alt_to_ref:Q").bin(maxbins=5000),
+                y="count()",
+                color=alt.Color("GT"),
+            )
+            .interactive()
         )
-        .interactive()
+
+        sqrt_mapq_chart = (
+            alt.Chart(
+                results.query("not ratio_alt_to_ref.isna() and ratio_alt_to_ref != @inf")
+            )
+            .mark_line()
+            .encode(
+                alt.X("sqrt_ratio:Q").bin(maxbins=250), y="count()", color=alt.Color("GT")
+            )
+            .interactive()
+        )
+
+        cbrt_mapq_chart = (
+            alt.Chart(
+                results.query("not ratio_alt_to_ref.isna() and ratio_alt_to_ref != @inf")
+            )
+            .mark_line()
+            .encode(
+                alt.X("cbrt_ratio:Q").bin(maxbins=250), y="count()", color=alt.Color("GT")
+            )
+            .interactive()
+        )
+
+        return (mapq_chart, mapq_chart_detailed, sqrt_mapq_chart, cbrt_mapq_chart)
+
+
+    mapq_chart, mapq_chart_detailed, sqrt_mapq_chart, cbrt_mapq_chart = plot_mapq_distribution(results)
+
+    out_dir = "outputs/HG002"
+    mapq_chart.save(f"{out_dir}/mapq_chart.svg")
+    mapq_chart_detailed.save(f"{out_dir}/mapq_chart_detailed.svg")
+    sqrt_mapq_chart.save(f"{out_dir}/sqrt_mapq_chart.svg")
+    cbrt_mapq_chart.save(f"{out_dir}/cbrt_mapq_chart.svg")
+    return (
+        cbrt_mapq_chart,
+        mapq_chart,
+        mapq_chart_detailed,
+        out_dir,
+        plot_mapq_distribution,
+        sqrt_mapq_chart,
     )
-    return (ratio_ge_5,)
-
-
-@app.cell
-def __(alt, results):
-    sqrt_chart = (
-        alt.Chart(
-            results.query("not ratio_alt_to_ref.isna() and ratio_alt_to_ref != @inf")
-        )
-        .mark_line()
-        .encode(
-            alt.X("sqrt_ratio:Q").bin(maxbins=250), y="count()", color=alt.Color("GT")
-        )
-        .interactive()
-    )
-    return (sqrt_chart,)
-
-
-@app.cell
-def __(alt, results):
-    cbrt_chart = (
-        alt.Chart(
-            results.query("not ratio_alt_to_ref.isna() and ratio_alt_to_ref != @inf")
-        )
-        .mark_line()
-        .encode(
-            alt.X("cbrt_ratio:Q").bin(maxbins=250), y="count()", color=alt.Color("GT")
-        )
-        .interactive()
-    )
-    return (cbrt_chart,)
-
-
-@app.cell
-def __(
-    cbrt_chart,
-    overview_chart,
-    overview_chart_even_more_detail,
-    overview_chart_more_detail,
-    ratio_ge_5,
-    ratio_lt_5,
-    sqrt_chart,
-):
-    overview_charts = (
-        overview_chart | overview_chart_more_detail | overview_chart_even_more_detail
-    )
-
-    initial_charts = ratio_lt_5 | ratio_ge_5
-
-    root_charts = sqrt_chart | cbrt_chart
-    return initial_charts, overview_charts, root_charts
 
 
 @app.cell(hide_code=True)
@@ -695,64 +660,72 @@ def __(mo):
 
 
 @app.cell
-def __(np, results):
-    predictions = results.copy()
+def __(np, pd, results):
+    def predict_genotype(
+        results: pd.DataFrame, lower_het_bound: float, upper_het_bound: float
+    ) -> pd.DataFrame:
+        predictions = results.copy()
 
-    predictions["prediction"] = np.where(
-        results["ratio_alt_to_ref"].isna(),
-        "./.",
-        np.where(
-            results["ratio_alt_to_ref"] >= 2.8,
-            "1/1",
-            np.where(results["ratio_alt_to_ref"] < 0.2, "0/0", "0/1"),
-        ),
-    )
+        predictions["prediction"] = np.where(
+            results["ratio_alt_to_ref"].isna(),
+            "./.",
+            np.where(
+                results["ratio_alt_to_ref"] >= upper_het_bound,
+                "1/1",
+                np.where(results["ratio_alt_to_ref"] < lower_het_bound, "0/0", "0/1"),
+            ),
+        )
 
-    predictions["is_correct"] = predictions["prediction"] == predictions["GT"]
+        predictions["GT_unphased"] = np.where(
+            predictions["GT"].str.contains('/'),
+            predictions["GT"],
+            predictions["GT"].map(
+            {"0|0": "0/0", "0|1": "0/1", "1|0": "0/1", "1|1": "1/1"}),
+        )
 
+        predictions["GT_concordance"] = (
+            predictions["prediction"] == predictions["GT_unphased"]
+        )
+
+        return predictions
+
+
+    predictions = predict_genotype(results, 0.2, 2.8)
     predictions
-    return (predictions,)
+    return predict_genotype, predictions
 
 
 @app.cell
-def __(predictions):
-    correct_predictions_by_sizecat = predictions.groupby("SIZECAT").agg(
-        {"is_correct": ["sum", "count"]}
-    )
+def __(out_dir, pd, predictions):
+    def calculate_performance(predictions: pd.DataFrame) -> str:
+        recall = 100 * sum(predictions["GT_concordance"]) / predictions.shape[0]
 
-    correct_predictions_by_sizecat["pct"] = (
-        100
-        * correct_predictions_by_sizecat[("is_correct", "sum")]
-        / correct_predictions_by_sizecat[("is_correct", "count")]
-    )
+        correct_predictions_by_svtype = predictions.groupby("SVTYPE").agg(
+            {"GT_concordance": ["sum", "count"]}
+        )
+        correct_predictions_by_svtype["pct"] = (
+            100
+            * correct_predictions_by_svtype[("GT_concordance", "sum")]
+            / correct_predictions_by_svtype[("GT_concordance", "count")]
+        )
 
-    correct_predictions_by_sizecat
-    return (correct_predictions_by_sizecat,)
+        contingency_table = pd.crosstab(
+            predictions["GT_unphased"], predictions["prediction"], normalize="index"
+        )
 
-
-@app.cell
-def __(predictions):
-    correct_predictions_by_svtype = predictions.groupby("SVTYPE").agg(
-        {"is_correct": ["sum", "count"]}
-    )
-
-    correct_predictions_by_svtype["pct"] = (
-        100
-        * correct_predictions_by_svtype[("is_correct", "sum")]
-        / correct_predictions_by_svtype[("is_correct", "count")]
-    )
-
-    correct_predictions_by_svtype
-    return (correct_predictions_by_svtype,)
+        return "\n\n".join(
+            [f"RECALL: {recall}",
+            contingency_table.to_markdown(),
+            correct_predictions_by_svtype.to_markdown(),]
+        )
 
 
-@app.cell
-def __(pd, predictions):
-    contingency_table = pd.crosstab(
-        predictions["GT"], predictions["prediction"], normalize="index"
-    )
-    contingency_table
-    return (contingency_table,)
+    performance = calculate_performance(predictions)
+
+    with open(f"{out_dir}/summary.md", "w") as file:
+        print(performance, file=file)
+            
+    return calculate_performance, file, performance
 
 
 if __name__ == "__main__":

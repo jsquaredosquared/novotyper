@@ -1,0 +1,10 @@
+# novoindex (4.4) - Universal k-mer index constructor.
+# (C) 2008 - 2011 NovoCraft Technologies Sdn Bhd
+# novoindex resources/reference-genomes/GRCh38_full_analysis_set_plus_decoy_hla.fa.nix resources/reference-genomes/GRCh38_full_analysis_set_plus_decoy_hla.fa 
+# Creating 63 indexing threads.
+# Building with 15-mer and step of 2 bp.
+#    1608650751 kmers were indexed.
+#      86951012 kmers not indexed due to excess N's.
+# novoindex construction dT = 197.8s
+# Index memory size  11.167Gbyte.
+# Done.

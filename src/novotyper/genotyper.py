@@ -211,8 +211,11 @@ def predict_genotype(
         ),
     )
 
-    predictions["GT_unphased"] = predictions["GT"].map(
-        {"0|0": "0/0", "0|1": "0/1", "1|0": "0/1", "1|1": "1/1"}
+    predictions["GT_unphased"] = np.where(
+        predictions["GT"].str.contains('/'),
+        predictions["GT"],
+        predictions["GT"].map(
+        {"0|0": "0/0", "0|1": "0/1", "1|0": "0/1", "1|1": "1/1"}),
     )
 
     predictions["GT_concordance"] = (
@@ -222,7 +225,7 @@ def predict_genotype(
     return predictions
 
 
-def calculate_performance(predictions: pd.DataFrame, out_dir: str) -> None:
+def calculate_performance(predictions: pd.DataFrame) -> str:
     recall = 100 * sum(predictions["GT_concordance"]) / predictions.shape[0]
 
     correct_predictions_by_svtype = predictions.groupby("SVTYPE").agg(
@@ -238,17 +241,14 @@ def calculate_performance(predictions: pd.DataFrame, out_dir: str) -> None:
         predictions["GT_unphased"], predictions["prediction"], normalize="index"
     )
 
-    with open(f"{out_dir}/summary.md", "w") as file:
-        print(
-            f"recall: {recall}",
-            contingency_table.to_markdown(),
-            correct_predictions_by_svtype.to_markdown(),
-            sep="\n",
-            file=file,
-        )
+    return "\n\n".join(
+        [f"RECALL: {recall}",
+        contingency_table.to_markdown(),
+        correct_predictions_by_svtype.to_markdown(),]
+    )
 
 
-def plot_mapq_distribution(results: pd.DataFrame, out_dir: str) -> None:
+def plot_mapq_distribution(results: pd.DataFrame) -> tuple[alt.Chart]:
     inf = np.inf
 
     mapq_chart = (
@@ -258,6 +258,19 @@ def plot_mapq_distribution(results: pd.DataFrame, out_dir: str) -> None:
         .mark_line()
         .encode(
             alt.X("ratio_alt_to_ref:Q").bin(maxbins=100),
+            y="count()",
+            color=alt.Color("GT"),
+        )
+        .interactive()
+    )
+
+    mapq_chart_detailed = (
+        alt.Chart(
+            results.query("not ratio_alt_to_ref.isna() and ratio_alt_to_ref != @inf")
+        )
+        .mark_line()
+        .encode(
+            alt.X("ratio_alt_to_ref:Q").bin(maxbins=5000),
             y="count()",
             color=alt.Color("GT"),
         )
@@ -286,6 +299,4 @@ def plot_mapq_distribution(results: pd.DataFrame, out_dir: str) -> None:
         .interactive()
     )
 
-    mapq_chart.save(f"{out_dir}/mapq_chart.svg")
-    sqrt_mapq_chart.save(f"{out_dir}/sqrt_mapq_chart.svg")
-    cbrt_mapq_chart.save(f"{out_dir}/cbrt_mapq_chart.svg")
+    return (mapq_chart, mapq_chart_detailed, sqrt_mapq_chart, cbrt_mapq_chart)

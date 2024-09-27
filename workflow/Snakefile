@@ -14,9 +14,25 @@ rule all:
         collect("outputs/{sample}/sv.sorted.bedgraph", sample=config["samples"]),
 
 
+rule run_novoindex_on_original_reference:
+    input:
+        "resources/reference-genomes/{reference}.fa"
+    output:
+        "resources/reference-genomes/{reference}.fa.nix"
+    log:
+        "logs/novoindex_{reference}.log"
+    shell:
+        "{config[novoindex]} "
+        "{output} "
+        "{input} "
+        "2> {log}"
+
+
 rule make_alt_scaffolds:
     input:
         sv_vcf=lambda wildcards: config["truth_set_vcf"][wildcards.sample],
+        reference=lambda wildcards: config["reference"][wildcards.sample],
+        ref_index=lambda wildcards: f"{config["reference"][wildcards.sample]}.nix"
     output:
         alt_scaffolds_fasta="outputs/{sample}/alt_scaffolds.fa",
     params:
@@ -28,56 +44,39 @@ rule make_alt_scaffolds:
         "{config[novosv]} vcf2altscaffold "
         "-c {params.context} "
         "-v {params.min_var_len} "
-        "--nix {config[reference]}.nix "
-        "{input} "
+        "--nix {input.reference}.nix "
+        "{input.sv_vcf} "
         "> {output} "
         "2> {log}"
 
 
 rule run_novoindex:
     input:
-        "outputs/{sample}/alt_scaffolds.fa",
+        alts_fasta="outputs/{sample}/alt_scaffolds.fa",
+        reference=lambda wildcards: config["reference"][wildcards.sample]
     output:
-        new_novoindex=f"outputs/{{sample}}/{basename(config["reference"].replace(".fa", ".sv.nix"))}",
+        new_novoindex="outputs/{sample}/{reference}.sv.nix",
     log:
-        "logs/novoindex_{sample}.log",
+        "logs/novoindex_{sample}_{reference}.log",
     shell:
         "{config[novoindex]} "
         "{output.new_novoindex} "
-        "{config[reference]} "
-        "{input} "
+        "{input.reference} "
+        "{input.alts_fasta} "
         "2> {log}"
-
-
-rule samtools_faidx:
-    input:
-        "outputs/{sample}.alt_scaffolds.fa",
-    output:
-        new_fasta_gz=f"outputs/{{sample}}/{basename(config["reference"].replace(".fa", ".sv.fa.gz"))}",
-    conda:
-        "envs/samtools.yaml"
-    log:
-        "logs/samtools_faidx_{sample}.log",
-    threads: 8
-    shell:
-        "(cat {config[reference]} {input} | "
-        "{config[novoutil]} bgzf - "
-        "> {output.new_fasta_gz} "
-        "&& samtools faidx {output.new_fasta_gz} "
-        ")2> {log}"
 
 
 rule align_sample:
     input:
         reads=lambda wildcards: config["samples"][wildcards.sample],
-        alt_index=f"outputs/{{sample}}/{basename(config["reference"].replace(".fa", ".sv.nix"))}",
+        spiked_index=lambda wildcards: f"outputs/{wildcards.sample}/{basename(config["reference"][wildcards.sample])}.sv.nix"
     output:
         "outputs/{sample}/sv.bam",
     threads: 60
     log:
         "logs/align_{sample}.log",
     shell:
-        "({config[novoalign]} -c {threads} -d {input.alt_index} "
+        "({config[novoalign]} -c {threads} -d {input.spiked_index} "
         "-f {input.reads} "
         "-o BAM '@RG\tID:{wildcards.sample}\tSM:{wildcards.sample}\tPL:ILLUMINA\tLB:sv' "
         "| {config[novosort]} -m 8G -i -o {output} - "
@@ -88,7 +87,7 @@ rule make_bedgraph_file:
     input:
         bam_file="outputs/{sample}/sv.bam",
         alt_scaffolds_fasta="outputs/{sample}/alt_scaffolds.fa",
-        alt_index=f'outputs/{{sample}}/{basename(config["reference"].replace(".fa", ".sv.nix"))}',
+        spiked_index=lambda wildcards: f"outputs/{wildcards.sample}/{basename(config["reference"][wildcards.sample])}.sv.nix",
     output:
         bedgraph_file=multiext(
             "outputs/{sample}/sv", ".bedgraph", ".sorted.bedgraph"
@@ -101,7 +100,7 @@ rule make_bedgraph_file:
         "-a {input.alt_scaffolds_fasta} "
         "-b {input.bam_file} "
         "> {output.bedgraph_file[0]} "
-        "&& {config[novoutil]} headers {{input.alt_index}} "
+        "&& {config[novoutil]} headers {input.spiked_index} "
         "| awk 'NR > 1 {{print substr($4,2),$2}}' > chrom.sizes "
         "&& awk '$1 == \"track\" {{print; exit}}' {output.bedgraph_file[0]} > {output.bedgraph_file[1]} "
         '&& awk \'$1 == "#" || $1 == "track" {{next}} {{print}}\' {output.bedgraph_file[0]} | LC_ALL=C sort -k1,1 -k2,2n >> {output.bedgraph_file[1]} '
@@ -126,3 +125,21 @@ rule run_novotyper:
         "--sample {wildcards.sample} "
         "--out-dir outputs/{wildcards.sample} "
         ")2> {log}"
+
+
+# rule samtools_faidx:
+#     input:
+#         "outputs/{sample}/alt_scaffolds.fa",
+#     output:
+#         new_fasta_gz=f"outputs/{{sample}}/{basename(config["reference"].replace(".fa", ".sv.fa.gz"))}",
+#     conda:
+#         "envs/samtools.yaml"
+#     log:
+#         "logs/samtools_faidx_{sample}.log",
+#     threads: 8
+#     shell:
+#         "(cat {config[reference]} {input} | "
+#         "{config[novoutil]} bgzf - "
+#         "> {output.new_fasta_gz} "
+#         "&& samtools faidx {output.new_fasta_gz} "
+#         ")2> {log}"
