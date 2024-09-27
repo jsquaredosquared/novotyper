@@ -124,5 +124,5 @@ rule run_novotyper:
         "--alts-fasta {input.alt_scaffolds_fasta} "
         "--mapq-bedgraph {input.mapq_bedgraph} "
         "--sample {wildcards.sample} "
-        "outputs/{wildcards.sample} "
+        "--out-dir outputs/{wildcards.sample} "
         ")2> {log}"
