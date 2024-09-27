@@ -11,7 +11,7 @@ localrules:
 
 rule all:
     input:
-        collect("outputs/{sample}/sv.sorted.bedgraph", sample=config["samples"]),
+        collect("outputs/{sample}/summary.md", sample=config["samples"]),
 
 
 rule run_novoindex_on_original_reference:
