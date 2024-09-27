@@ -6,7 +6,7 @@ authors = [
     { name = "jsquaredosquared", email = "jeffreyjamesochiengodongo@gmail.com" }
 ]
 dependencies = [
-    "marimo>=0.8.19",
+    "marimo>=0.8.20",
     "pandas>=2.2.3",
     "polars[all]>=1.8.2",
     "altair[all]>=5.4.1",

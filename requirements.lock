@@ -139,7 +139,7 @@ jupyterlab-widgets==3.0.13
     # via ipywidgets
 kiwisolver==1.4.7
     # via matplotlib
-marimo==0.8.19
+marimo==0.8.20
     # via novotyper
 markdown==3.7
     # via marimo
