@@ -19,6 +19,8 @@ This repository contains the code used during the development of a prototype str
         | `novotyper` | Use the SV VCF, alt scaffolds FASTA, and MAPQ bedgraph to predict the genotypes and perform some benchmarking. |
         | `novoutil bgzf` [OPTIONAL] | Combine reference fasta + alt scaffolds fasta into a new fasta file, bgzip it, and index it with `samtools faidx`. Do this if you would like to have the spiked reference file to visualize the alignments in IGV. |
 
+    ![DAG](dag.svg)
+
 ## Report
 
 - For a basic description of the reasoning behind each step and the findings made during prototyping, please see `notebooks/report.md`.
