@@ -2,7 +2,7 @@
 
 This repository contains the code used during the development of a prototype structural variant genotyper tentatively called Novotyper.
 
-## Usage
+## Quick start
 
 1. Obtain a VCF of the structural variants you would like to genotype.
 

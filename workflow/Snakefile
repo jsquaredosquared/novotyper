@@ -36,9 +36,9 @@ rule make_alt_scaffolds:
 
 rule run_novoindex:
     input:
-        "outputs/{sample}.alt_scaffolds.fa",
+        "outputs/{sample}/alt_scaffolds.fa",
     output:
-        new_novoindex=f"outputs/{sample}/{basename(config["reference"].replace(".fa", ".sv.nix"))},
+        new_novoindex=f"outputs/{{sample}}/{basename(config["reference"].replace(".fa", ".sv.nix"))}",
     log:
         "logs/novoindex_{sample}.log",
     shell:
@@ -53,7 +53,7 @@ rule samtools_faidx:
     input:
         "outputs/{sample}.alt_scaffolds.fa",
     output:
-        new_fasta_gz=f"outputs/{sample}/{basename(config["reference"].replace(".fa", ".sv.fa.gz"))}",
+        new_fasta_gz=f"outputs/{{sample}}/{basename(config["reference"].replace(".fa", ".sv.fa.gz"))}",
     conda:
         "envs/samtools.yaml"
     log:
@@ -70,7 +70,7 @@ rule samtools_faidx:
 rule align_sample:
     input:
         reads=lambda wildcards: config["samples"][wildcards.sample],
-        alt_index=f"outputs/{sample}/{basename(config["reference"].replace(".fa", ".sv.nix"))},
+        alt_index=f"outputs/{{sample}}/{basename(config["reference"].replace(".fa", ".sv.nix"))}",
     output:
         "outputs/{sample}/sv.bam",
     threads: 60
@@ -88,7 +88,7 @@ rule make_bedgraph_file:
     input:
         bam_file="outputs/{sample}/sv.bam",
         alt_scaffolds_fasta="outputs/{sample}/alt_scaffolds.fa",
-        alt_index=f'outputs/{sample}/{basename(config["reference"].replace(".fa", ".sv.nix"))}',
+        alt_index=f'outputs/{{sample}}/{basename(config["reference"].replace(".fa", ".sv.nix"))}',
     output:
         bedgraph_file=multiext(
             "outputs/{sample}/sv", ".bedgraph", ".sorted.bedgraph"

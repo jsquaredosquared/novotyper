@@ -29,6 +29,11 @@ anyio==4.6.0
     # via starlette
 anywidget==0.9.13
     # via altair
+appdirs==1.4.4
+    # via snakemake
+argparse-dataclass==2.0.0
+    # via snakemake-interface-common
+    # via snakemake-interface-executor-plugins
 asttokens==2.4.1
     # via stack-data
 async-generator==1.10
@@ -59,6 +64,13 @@ comm==0.2.2
     # via ipywidgets
 commonmark==0.9.1
     # via great-tables
+conda-inject==1.3.2
+    # via snakemake
+configargparse==1.7
+    # via snakemake
+    # via snakemake-interface-common
+connection-pool==0.0.3
+    # via snakemake
 connectorx==0.3.3
     # via polars
 contourpy==1.3.0
@@ -69,6 +81,8 @@ cycler==0.12.1
     # via matplotlib
 cyclopts==2.9.9
     # via novotyper
+datrie==0.8.2
+    # via snakemake
 debugpy==1.8.6
     # via ipykernel
 decorator==5.1.1
@@ -80,6 +94,10 @@ docstring-parser==0.16
 docutils==0.21.2
     # via marimo
     # via rich-rst
+    # via snakemake
+dpath==2.2.0
+    # via snakemake
+    # via yte
 et-xmlfile==1.1.0
     # via openpyxl
 executing==2.1.0
@@ -95,6 +113,10 @@ fsspec==2024.9.0
     # via pyiceberg
 gevent==24.2.1
     # via polars
+gitdb==4.0.11
+    # via gitpython
+gitpython==3.1.43
+    # via snakemake
 great-tables==0.11.1
     # via polars
 greenlet==3.1.1
@@ -104,9 +126,13 @@ h11==0.14.0
     # via uvicorn
 htmltools==0.5.3
     # via great-tables
+humanfriendly==10.0
+    # via snakemake
 idna==3.10
     # via anyio
     # via requests
+immutables==0.20
+    # via snakemake
 importlib-metadata==8.5.0
     # via great-tables
 importlib-resources==6.4.5
@@ -128,9 +154,11 @@ jedi==0.19.1
     # via marimo
 jinja2==3.1.4
     # via altair
+    # via snakemake
 jsonschema==4.23.0
     # via altair
     # via nbformat
+    # via snakemake
 jsonschema-specifications==2023.12.1
     # via jsonschema
 jupyter-client==8.6.3
@@ -170,6 +198,7 @@ natsort==8.4.0
     # via pyranges
 nbformat==5.10.4
     # via novotyper
+    # via snakemake
 ncls==0.0.68
     # via pyranges
 nest-asyncio==1.6.0
@@ -196,6 +225,7 @@ packaging==24.1
     # via marimo
     # via matplotlib
     # via pytest
+    # via snakemake
 pandas==2.2.3
     # via adbc-driver-manager
     # via adbc-driver-sqlite
@@ -212,6 +242,8 @@ pexpect==4.9.0
     # via ipython
 pillow==10.4.0
     # via matplotlib
+plac==1.4.3
+    # via yte
 platformdirs==4.3.6
     # via jupyter-core
 pluggy==1.5.0
@@ -227,11 +259,14 @@ psutil==6.0.0
     # via coconut
     # via ipykernel
     # via marimo
+    # via snakemake
     # via vegafusion
 psygnal==0.11.1
     # via anywidget
 ptyprocess==0.7.0
     # via pexpect
+pulp==2.8.0
+    # via snakemake
 pure-eval==0.2.3
     # via stack-data
 pyarrow==17.0.0
@@ -272,8 +307,11 @@ pytz==2024.2
     # via pandas
 pyyaml==6.0.2
     # via bioframe
+    # via conda-inject
     # via marimo
     # via pymdown-extensions
+    # via snakemake
+    # via yte
 pyzmq==26.2.0
     # via ipykernel
     # via jupyter-client
@@ -283,6 +321,10 @@ referencing==0.35.1
 requests==2.32.3
     # via bioframe
     # via pyiceberg
+    # via snakemake
+reretry==0.11.8
+    # via snakemake
+    # via snakemake-interface-storage-plugins
 rich==13.8.1
     # via cyclopts
     # via pyiceberg
@@ -301,6 +343,23 @@ setuptools==75.1.0
 six==1.16.0
     # via asttokens
     # via python-dateutil
+smart-open==7.0.4
+    # via snakemake
+smmap==5.0.1
+    # via gitdb
+snakemake==8.20.5
+    # via novotyper
+snakemake-interface-common==1.17.3
+    # via snakemake
+    # via snakemake-interface-executor-plugins
+    # via snakemake-interface-report-plugins
+    # via snakemake-interface-storage-plugins
+snakemake-interface-executor-plugins==9.2.0
+    # via snakemake
+snakemake-interface-report-plugins==1.0.0
+    # via snakemake
+snakemake-interface-storage-plugins==3.3.0
+    # via snakemake
 sniffio==1.3.1
     # via anyio
 sorted-nearest==0.0.39
@@ -317,10 +376,17 @@ strictyaml==1.7.3
     # via pyiceberg
 tabulate==0.9.0
     # via pyranges
+    # via snakemake
 tenacity==8.5.0
     # via pyiceberg
+throttler==1.2.2
+    # via snakemake
+    # via snakemake-interface-executor-plugins
+    # via snakemake-interface-storage-plugins
 tomlkit==0.13.2
     # via marimo
+toposort==1.10
+    # via snakemake
 tornado==6.4.1
     # via ipykernel
     # via jupyter-client
@@ -365,12 +431,18 @@ websockets==12.0
     # via marimo
 widgetsnbextension==4.0.13
     # via ipywidgets
+wrapt==1.16.0
+    # via smart-open
+    # via snakemake
+    # via snakemake-interface-storage-plugins
 xlsx2csv==0.8.3
     # via polars
 xlsxwriter==3.2.0
     # via polars
 xyzservices==2024.9.0
     # via altair-tiles
+yte==1.5.4
+    # via snakemake
 zipp==3.20.2
     # via importlib-metadata
 zope-event==5.0
