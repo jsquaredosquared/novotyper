@@ -17,7 +17,7 @@ This repository contains the code used during the development of a prototype str
         | `novoalign` | Produce the BAM file by aligning the reads using the spiked `.nix` file. |
         | `novoSV zabedgraph` | Use the alt scaffolds FASTA and the BAM file to obtain the MAPQ bedgraph file. |
         | `novotyper` | Use the SV VCF, alt scaffolds FASTA, and MAPQ bedgraph to predict the genotypes and perform some benchmarking. |
-        | `novoutil bgzf` [OPTIONAL] | Combine reference fasta + alt scaffolds fasta into a new fasta file, bgzip it, and index it with `samtools faidx`. Do this if you would like to visualize the alignments in IGV. |
+        | `novoutil bgzf` [OPTIONAL] | Combine reference fasta + alt scaffolds fasta into a new fasta file, bgzip it, and index it with `samtools faidx`. Do this if you would like to have the spiked reference file to visualize the alignments in IGV. |
 
 ## Report
 
