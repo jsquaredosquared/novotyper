@@ -86,6 +86,8 @@ executing==2.1.0
     # via stack-data
 fastexcel==0.11.6
     # via polars
+fastjsonschema==2.20.0
+    # via nbformat
 fonttools==4.54.1
     # via matplotlib
 fsspec==2024.9.0
@@ -128,6 +130,7 @@ jinja2==3.1.4
     # via altair
 jsonschema==4.23.0
     # via altair
+    # via nbformat
 jsonschema-specifications==2023.12.1
     # via jsonschema
 jupyter-client==8.6.3
@@ -135,6 +138,7 @@ jupyter-client==8.6.3
 jupyter-core==5.7.2
     # via ipykernel
     # via jupyter-client
+    # via nbformat
 jupyterlab-widgets==3.0.13
     # via ipywidgets
 kiwisolver==1.4.7
@@ -164,6 +168,8 @@ narwhals==1.8.3
     # via altair
 natsort==8.4.0
     # via pyranges
+nbformat==5.10.4
+    # via novotyper
 ncls==0.0.68
     # via pyranges
 nest-asyncio==1.6.0
@@ -326,6 +332,7 @@ traitlets==5.14.3
     # via jupyter-client
     # via jupyter-core
     # via matplotlib-inline
+    # via nbformat
 typing-extensions==4.12.2
     # via adbc-driver-manager
     # via altair
