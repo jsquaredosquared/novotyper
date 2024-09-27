@@ -9,16 +9,12 @@ This repository contains the code used during the development of a prototype str
 2. Run the Snakemake workflow found in `workflow/Snakefile`.
     - Modify the `config/config.yaml` file to point to the correct locations for each input file and executable.
     - The workflow should perform the following steps (but you could run them yourself):
-        - `novoSV vcf2altscaffold`: Use the SVs from the VCF file and the reference `.nix` file to generate a FASTA file containing the alt scaffolds.
+        - `novoSV vcf2altscaffold`: Use the SVs from the VCF file along with the reference `.nix` file to generate a FASTA file containing the alt scaffolds.
         - `novoindex`: Index the reference fasta + alt scaffolds fasta to create a new spiked `.nix` file.
         - `novoalign`: Produce the BAM file by aligning the reads using the spiked `.nix` file.
-        - `novoSV zabedgraph`: Use the alt scaffolds FASTA and the BAM file to obtain the MAPQ as a bedgraph.
+        - `novoSV zabedgraph`: Use the alt scaffolds FASTA and the BAM file to obtain the MAPQ bedgraph file.
+        - `novotyper`: Use the SV VCF, alt scaffolds FASTA, and MAPQ bedgraph to predict the genotypes and perform some benchmarking.
         - `novoutil bgzf` [OPTIONAL]: Combine reference fasta + alt scaffolds fasta into a new fasta file, bgzip it, and index it with `samtools faidx`. Do this if you would like to visualize the alignments in IGV.
-
-3. Run `novotyper` to predict genotypes and perform some benchmarking.
-    - This step requires your SV VCF, plus the alt scaffolds FASTA and MAPQ bedgraph generated in step 2 above.
-    - Clone this repository, and run `pip install .` in the virtual environment in which you wish to install `novotyper`.
-      - If successfully installed, typing `novotyper genotype --help` should bring up the list of parameters required to run the program.
 
 ## Report
 

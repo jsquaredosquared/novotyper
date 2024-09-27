@@ -222,7 +222,7 @@ def predict_genotype(
     return predictions
 
 
-def calculate_performance(predictions: pd.DataFrame, out_file: str) -> None:
+def calculate_performance(predictions: pd.DataFrame, out_dir: str) -> None:
     recall = 100 * sum(predictions["GT_concordance"]) / predictions.shape[0]
 
     correct_predictions_by_svtype = predictions.groupby("SVTYPE").agg(
@@ -238,7 +238,7 @@ def calculate_performance(predictions: pd.DataFrame, out_file: str) -> None:
         predictions["GT_unphased"], predictions["prediction"], normalize="index"
     )
 
-    with open(out_file, "w") as file:
+    with open(f"{out_dir}/summary.md", "w") as file:
         print(
             f"recall: {recall}",
             contingency_table.to_markdown(),
@@ -251,7 +251,7 @@ def calculate_performance(predictions: pd.DataFrame, out_file: str) -> None:
 def plot_mapq_distribution(results: pd.DataFrame, out_dir: str) -> None:
     inf = np.inf
 
-    overview_chart = (
+    mapq_chart = (
         alt.Chart(
             results.query("not ratio_alt_to_ref.isna() and ratio_alt_to_ref != @inf")
         )
@@ -264,7 +264,7 @@ def plot_mapq_distribution(results: pd.DataFrame, out_dir: str) -> None:
         .interactive()
     )
 
-    sqrt_chart = (
+    sqrt_mapq_chart = (
         alt.Chart(
             results.query("not ratio_alt_to_ref.isna() and ratio_alt_to_ref != @inf")
         )
@@ -275,7 +275,7 @@ def plot_mapq_distribution(results: pd.DataFrame, out_dir: str) -> None:
         .interactive()
     )
 
-    cbrt_chart = (
+    cbrt_mapq_chart = (
         alt.Chart(
             results.query("not ratio_alt_to_ref.isna() and ratio_alt_to_ref != @inf")
         )
@@ -286,6 +286,6 @@ def plot_mapq_distribution(results: pd.DataFrame, out_dir: str) -> None:
         .interactive()
     )
 
-    overview_chart.save(f"{out_dir}/overview_chart.svg")
-    sqrt_chart.save(f"{out_dir}/sqrt_chart.svg")
-    cbrt_chart.save(f"{out_dir}/cbrt_chart.svg")
+    mapq_chart.save(f"{out_dir}/mapq_chart.svg")
+    sqrt_mapq_chart.save(f"{out_dir}/sqrt_mapq_chart.svg")
+    cbrt_mapq_chart.save(f"{out_dir}/cbrt_mapq_chart.svg")
