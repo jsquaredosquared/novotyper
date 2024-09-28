@@ -8,7 +8,7 @@ sample = "HG002"
 mapq_bedgraph = "/export/home/jeffrey/Documents/novocraft-prototype-sv-genotyper/previous_outputs/HG002/HG002.sv.sorted.bedgraph"
 
 
-novotyper = App(help="PROTOTYPE STRUCTURAL VARIANT GENOTYPER USING NOVOALIGN MAPQ")
+novotyper = App(help="Prototype structural variant genotyper using NovoAlign MAPQ")
 
 
 @novotyper.command
