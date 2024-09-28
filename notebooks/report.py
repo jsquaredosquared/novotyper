@@ -6,14 +6,10 @@ app = marimo.App(width="medium")
 
 @app.cell(hide_code=True)
 def __(mo):
-    mo.md(r"""# Report""")
-    return
-
-
-@app.cell(hide_code=True)
-def __(mo):
     mo.md(
         r"""
+        # Novocraft SV Genotyping Report
+
         ## Background
 
         - Investigating the feasibility of an **alignment-based SV genotyper**.
@@ -22,15 +18,7 @@ def __(mo):
         - A new reference consisting of the **reference genome + SV alt contigs** is used for alignment.
         - If an SV from the list is present, more reads from this region are expected to align to the corresponding SV alt contig with a better mapping quality compared to the corresponding reference location.
         - Thus, **MAPQ** along with other information may be used to select the combination of alleles which best account for the observed reads.
-        """
-    )
-    return
 
-
-@app.cell(hide_code=True)
-def __(mo):
-    mo.md(
-        r"""
         ## Assumptions
 
         - Let $R_{\text{MAPQ}} = \frac{\text{MAPQ}_{\text{alt}}}{\text{MAPQ}_{\text{ref}}}$.
@@ -44,13 +32,13 @@ def __(mo):
 
 @app.cell(hide_code=True)
 def __(mo):
-    mo.md("""## Observations (in HG002)""")
-    return
+    mo.md(
+        """
+        ## Observations (in HG002)
 
-
-@app.cell(hide_code=True)
-def __(mo):
-    mo.md(r"""### MAPQ ratio distribution""")
+        ### MAPQ ratio distribution
+        """
+    )
     return
 
 
@@ -60,7 +48,7 @@ def __(mapq_chart, mapq_chart_detailed):
     return
 
 
-@app.cell(hide_code=True)
+@app.cell
 def __(mo):
     mo.md(
         r"""
@@ -78,16 +66,11 @@ def __(cbrt_mapq_chart, sqrt_mapq_chart):
     return
 
 
-@app.cell
-def __(mo):
-    mo.md(r"""- Zoom in on distirbution of $R_{\text{MAPQ}}$ to select reasonable cutoffs.""")
-    return
-
-
 @app.cell(hide_code=True)
 def __(mo):
     mo.md(
         r"""
+        - Zoom in on distirbution of $R_{\text{MAPQ}}$ to select reasonable cutoffs.
         - The $R_{\text{MAPQ}}$ distribution has a mode at around 1, as expected.
         - However, there is some overlap where SVs have an unexpected $R_{\text{MAPQ}}$ for the reported genotype.
         - Using the following cutoff values yields a recall of 78% (genotype called correctly):
@@ -103,13 +86,46 @@ def __(mo):
     return
 
 
+@app.cell(hide_code=True)
+def __(mo):
+    mo.md(
+        """
+        ```coconut
+        from novotyper import genotyper as gt
+
+        vcf_info = gt.extract_info_from_vcf(sv_vcf, sample)
+        mapq_bedgraph = gt.read_mapq_bedgraph(mapq_bedgraph)
+
+        test_locs = (
+            alts_fasta
+            |> gt.read_alts_fasta_descriptions
+            |> lift(,)(gt.extract_ref_locs_of_alts, gt.extract_sv_locs)
+            |*> gt.join_ref_and_sv_locs
+            |> gt.define_alt_test_locs
+            |> gt.add_vcf_info_to_test_locs$(?, vcf_info)
+            |> gt.get_pass_variants
+        )
+
+        ratio_results = (
+            test_locs
+            |> lift(,)(gt.get_ref_test_locs, gt.get_alt_test_locs)
+            |> map$(gt.calculate_mapq$(?, mapq_bedgraph))
+            |*> gt.join_and_calculate_mapq_ratio$(test_locs)
+            |> gt.predict_genotype$(?, 0.2, 2.8)
+        )
+        ```
+        """
+    )
+    return
+
+
 @app.cell
 def __(mo, performance):
     mo.md(performance)
     return
 
 
-@app.cell
+@app.cell(hide_code=True)
 def __(mo):
     mo.md(
         r"""
@@ -136,20 +152,20 @@ def __(mo):
 
         ### Precision
 
-        - To assess precision, we need to include true negative SVs (homozygous reference).
+        - To assess precision, we need to include **true negative SVs** (homozygous reference).
             - Use the HGSVC2 benchmark VCF, which contains 0/0 variants.
             - Use simulated reads, so you are completely certain about the alleles.
             - Use the calls from an SV caller and see whether precision can be improved without negatively affecting recall.
-        - A variant may be detected by some methods but filtered out due to not meeting certain criteria.
+        - A variant may be detected by some methods but **filtered out** due to not meeting certain criteria.
             - This complicates the process of finding true negatives with which to assess precision.
             - Examples:
 
         ### Other considerations
 
-        - Split multiallelic VCF files prior to alt contig generation (so that the only possible genotypes are 0/0, 0/1, 1/1, or ./.).
-        - Should there be a minimum MAPQ?
-        - Should repeat and low-complexity regions be masked?
-        - How will it perform on other SV types?
+        - **Split multiallelic VCF files** prior to alt contig generation (so that the only possible genotypes are 0/0, 0/1, 1/1, or ./.).
+        - Should there be a **minimum MAPQ**?
+        - Should repeat and **low-complexity regions** be masked?
+        - How will it perform on **other SV types**?
             - Duplications and inversions can be treated as insertions.
             - Translocations?
             - Since they are not present or clearly labelled in most benchmarks, how can performance on these SV types be evaluated?
@@ -158,7 +174,7 @@ def __(mo):
     return
 
 
-@app.cell
+@app.cell(hide_code=True)
 def __(mo):
     mo.md(
         r"""
@@ -179,15 +195,8 @@ def __(mo):
         - This method is limited to trying to detect and genotype known SVs.
             - It cannot detect _de novo_ SVs.
             - A library of known SVs of interest (e.g., those associated with a phenotype or disease, or those previously called by another SV caller) will be useful for this method.
-
         """
     )
-    return
-
-
-@app.cell
-def __(mo):
-    mo.md(r"""# Setup""")
     return
 
 
