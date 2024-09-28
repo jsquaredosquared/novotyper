@@ -14,7 +14,7 @@ rule all:
         collect("outputs/{sample}/summary.md", sample=config["samples"]),
 
 
-rule run_novoindex_on_original_reference:
+rule novoindex_original_reference:
     input:
         "resources/reference-genomes/{reference}.fa"
     output:
