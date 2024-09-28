@@ -1,6 +1,6 @@
 import marimo
 
-__generated_with = "0.8.19"
+__generated_with = "0.8.20"
 app = marimo.App(width="medium")
 
 
@@ -109,13 +109,13 @@ def __(mo, performance):
     return
 
 
-@app.cell(hide_code=True)
+@app.cell
 def __(mo):
     mo.md(
         r"""
         ## Things to consider
 
-        ### Overlaps $R_{\text{MAPQ}}$ distributions
+        ### Overlaps in $R_{\text{MAPQ}}$ distributions
 
         - Ideally the distributions for 0/0, 0/1, and 1/1 should be separable to distinguish genotypes.
         - Overlaps mean **some incorrectly called genotypes may be inevitable**.
@@ -125,13 +125,14 @@ def __(mo):
             - MAPQ ratio very low (implying 0/0) but actually 0/1 or 1/1.
             - MAPQ ratio very high (implying 1/1) but actually 0/0 or 0/1.
         - Most of them tend to be in what look like repetitive or low-complexity regions.
-        - [ ] TODO Is there a reason for the "spikes" in the MAPQ distributions near 0?
+        - Is there a reason for the "spikes" in the MAPQ distributions near 0?
 
         ### Generalizability of cutoffs
 
         - Can the cutoffs be applied to other samples?
             - The distributions could be affected by things such as sequencing parameters (coverage, etc.).
-        - To investigate cutoffs, the HGSVC2 benchmarks can be used to see if the distributions are similar, or to combine all samples and see the overall distribution.
+        - To investigate cutoffs, other benchmarks (e.g. HGSVC2) can be used to see if the distributions are similar, or to combine all samples and see the overall distribution.
+            - I tried to run it with the HG005 and HG00513 benchmarks, but `novoindex` has issues with the truth set VCFs.
 
         ### Precision
 
@@ -139,6 +140,9 @@ def __(mo):
             - Use the HGSVC2 benchmark VCF, which contains 0/0 variants.
             - Use simulated reads, so you are completely certain about the alleles.
             - Use the calls from an SV caller and see whether precision can be improved without negatively affecting recall.
+        - A variant may be detected by some methods but filtered out due to not meeting certain criteria.
+            - This complicates the process of finding true negatives with which to assess precision.
+            - Examples:
 
         ### Other considerations
 
@@ -146,26 +150,27 @@ def __(mo):
         - Should there be a minimum MAPQ?
         - Should repeat and low-complexity regions be masked?
         - How will it perform on other SV types?
-            - Duplications and inversions shouldn't be too difficult to implement.
+            - Duplications and inversions can be treated as insertions.
             - Translocations?
+            - Since they are not present or clearly labelled in most benchmarks, how can performance on these SV types be evaluated?
         """
     )
     return
 
 
-@app.cell(hide_code=True)
+@app.cell
 def __(mo):
     mo.md(
         r"""
         ## Comparison to other genotypers
 
-        - The novoSV method has strong similarities to graph-based SV genotypers.
-            - e.g., NPSV, SV2, Paragraph, vg, SVTyper, SVJedi-graph, GraphTyper, BayesTyper.
-            - These use nodes of a graph instead of alt contigs.
+        - The novoSV method has some similarities to graph-based SV genotypers (e.g., NPSV, SV2, Paragraph, vg, SVTyper, SVJedi-graph, GraphTyper, BayesTyper)
+            - These use nodes of a graph to represent the different haplotypes instead of alt contigs.
             - They are usually much faster.
             - Some also struggle with nearby and overlapping SVs.
         - The novoSV method can take inspiration from some of their ideas:
-            - Taking into consideration the uniqueness of read mapping and alignment counts for genotyping.
+            - How can other information be incorporated to improve the performance? Can we into consideration the uniqueness of read mapping and alignment counts?
+            - NovoAlign takes too long as it has to align to the whole genome. Can alignment be limited to only targeted regions?
         - What would be the advantages of novoSV?
             - Can it be used to improve the precision of other SV callers by a significant amount?
 
@@ -174,7 +179,7 @@ def __(mo):
         - This method is limited to trying to detect and genotype known SVs.
             - It cannot detect _de novo_ SVs.
             - A library of known SVs of interest (e.g., those associated with a phenotype or disease, or those previously called by another SV caller) will be useful for this method.
-        - NovoAlign takes too long (especially slowing down development).
+
         """
     )
     return
@@ -424,7 +429,7 @@ def __(pd, test_locs, vcf_info):
 def __(pd, test_locs_with_info):
     def get_pass_variants(locs: pd.DataFrame) -> pd.DataFrame:
         return locs.query('FILTER == "PASS" or FILTER == "."')
-        
+
 
     test_locs_with_info_pass_only = get_pass_variants(test_locs_with_info)
     test_locs_with_info_pass_only
@@ -724,7 +729,6 @@ def __(out_dir, pd, predictions):
 
     with open(f"{out_dir}/summary.md", "w") as file:
         print(performance, file=file)
-            
     return calculate_performance, file, performance
 
 
