@@ -26,6 +26,12 @@ This repository contains the code used during the development of a prototype str
 - For a basic description of the reasoning behind each step and the findings made during prototyping, please see `notebooks/report.md`.
 - If you want to know how `novotyper` works step by step, check out `notebooks/novotyper.ipynb`. Each cell corresponds to a function which you can run to see its output.
 
+### Benchmarks
+
+- [x] HG002 (reads and truth set obtained from [GIAB](https://github.com/human-pangenomics/HG002_Data_Freeze_v1.0))
+- [ ] HG005 (reads and truth set obtained from [this paper](https://bmcgenomics.biomedcentral.com/articles/10.1186/s12864-022-08548-y))
+- [ ] HG00513 (reads and truth set obtained from [HGSVC2](https://www.internationalgenome.org/data-portal/data-collection/hgsvc2))
+
 ## Acknowledgements
 
 This work was part of my internship at [Novocraft](www.novocraft.com) (July 2024 - September 2024).
