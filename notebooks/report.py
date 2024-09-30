@@ -86,10 +86,12 @@ def __(mo):
     return
 
 
-@app.cell(hide_code=True)
+@app.cell
 def __(mo):
     mo.md(
         """
+        ## What does Novotyper do?
+
         ```coconut
         from novotyper import genotyper as gt
 
@@ -121,7 +123,11 @@ def __(mo):
 
 @app.cell
 def __(mo, performance):
-    mo.md(performance)
+    mo.md(f"""
+    ## HG002 genotype prediction results
+
+    {performance}
+    """)
     return
 
 
@@ -129,7 +135,7 @@ def __(mo, performance):
 def __(mo):
     mo.md(
         r"""
-        ## Things to consider
+        ## Things to consider for further development
 
         ### Overlaps in $R_{\text{MAPQ}}$ distributions
 
@@ -148,7 +154,7 @@ def __(mo):
         - Can the cutoffs be applied to other samples?
             - The distributions could be affected by things such as sequencing parameters (coverage, etc.).
         - To investigate cutoffs, other benchmarks (e.g. HGSVC2) can be used to see if the distributions are similar, or to combine all samples and see the overall distribution.
-            - I tried to run it with the HG005 and HG00513 benchmarks, but `novoindex` has issues with the truth set VCFs.
+            - I tried to run it with the HG005 and HG00513 benchmarks, but `novoSV` and `novoindex` raise errors with the truth set VCFs.
 
         ### Precision
 
@@ -157,8 +163,8 @@ def __(mo):
             - Use simulated reads, so you are completely certain about the alleles.
             - Use the calls from an SV caller and see whether precision can be improved without negatively affecting recall.
         - A variant may be detected by some methods but **filtered out** due to not meeting certain criteria.
+            - There are some examples of this in the GIAB small variant benchmarks.
             - This complicates the process of finding true negatives with which to assess precision.
-            - Examples:
 
         ### Other considerations
 
@@ -190,13 +196,19 @@ def __(mo):
         - What would be the advantages of novoSV?
             - Can it be used to improve the precision of other SV callers by a significant amount?
 
-        ## Limitations
+        ## Known limitations
 
         - This method is limited to trying to detect and genotype known SVs.
             - It cannot detect _de novo_ SVs.
             - A library of known SVs of interest (e.g., those associated with a phenotype or disease, or those previously called by another SV caller) will be useful for this method.
         """
     )
+    return
+
+
+@app.cell
+def __(mo):
+    mo.md("""# Novotyper code""")
     return
 
 
