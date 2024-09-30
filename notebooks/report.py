@@ -1,6 +1,6 @@
 import marimo
 
-__generated_with = "0.8.19"
+__generated_with = "0.8.20"
 app = marimo.App(width="medium")
 
 
@@ -453,7 +453,7 @@ def __(pd, test_locs_with_info):
 
 
     test_locs_with_info_pass_only = get_pass_variants(test_locs_with_info)
-    test_locs_with_info_pass_only
+    test_locs_with_info_pass_only.head()
     return get_pass_variants, test_locs_with_info_pass_only
 
 
@@ -470,7 +470,7 @@ def __(pd, test_locs_with_info_pass_only):
 
 
     ref_test_locs = get_ref_test_locs(test_locs_with_info_pass_only)
-    ref_test_locs
+    ref_test_locs.head()
     return get_ref_test_locs, ref_test_locs
 
 
@@ -487,7 +487,7 @@ def __(pd, test_locs_with_info_pass_only):
 
 
     alt_test_locs = get_alt_test_locs(test_locs_with_info_pass_only)
-    alt_test_locs
+    alt_test_locs.head()
     return alt_test_locs, get_alt_test_locs
 
 
@@ -513,7 +513,7 @@ def __(Path, pd, pr):
 
 
     mapq_bedgraph = read_mapq_bedgraph("outputs/HG002/sv.sorted.bedgraph")
-    mapq_bedgraph
+    mapq_bedgraph.head()
     return mapq_bedgraph, read_mapq_bedgraph
 
 
@@ -536,7 +536,7 @@ def __(mapq_bedgraph, pd, pr, ref_test_locs):
 
 
     ref_mapq = calculate_mapq(ref_test_locs, mapq_bedgraph)
-    ref_mapq
+    ref_mapq.head()
     return calculate_mapq, ref_mapq
 
 
@@ -549,7 +549,7 @@ def __(mo):
 @app.cell
 def __(alt_test_locs, calculate_mapq, mapq_bedgraph):
     alt_mapq = calculate_mapq(alt_test_locs, mapq_bedgraph)
-    alt_mapq
+    alt_mapq.head()
     return (alt_mapq,)
 
 
@@ -585,7 +585,7 @@ def __(alt_mapq, np, pd, ref_mapq, test_locs_with_info_pass_only):
         ref_mapq,
         alt_mapq
     )
-    results
+    results.head()
     return join_and_calculate_mapq_ratio, results
 
 
@@ -717,7 +717,7 @@ def __(np, pd, results):
 
 
     predictions = predict_genotype(results, 0.2, 2.8)
-    predictions
+    predictions.head()
     return predict_genotype, predictions
 
 
