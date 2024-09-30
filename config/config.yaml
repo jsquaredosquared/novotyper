@@ -26,4 +26,4 @@ reference:
 truth_set_vcf:
   # HG002: "/export/home/jeffrey/Documents/novocraft-prototype-sv-caller/resources/sv-vcf-files/HG002_SVs_Tier1_v0.6.ALL.vcf"
   # HG00513: "resources/HG00513/freeze3.sv.alt.vcf"
-  HG005: "resources/HG005/HG005_consensus_gt.vcf"
+  HG005: "resources/HG005/HG005_consensus_gt.DELINS.vcf"

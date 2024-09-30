@@ -1,6 +1,6 @@
 import marimo
 
-__generated_with = "0.8.20"
+__generated_with = "0.8.19"
 app = marimo.App(width="medium")
 
 
@@ -728,7 +728,7 @@ def __(out_dir, pd, predictions):
         )
 
         return "\n\n".join(
-            [f"RECALL: {recall}",
+            [f"|RECALL|\n|---|\n|{recall}|",
             contingency_table.to_markdown(),
             correct_predictions_by_svtype.to_markdown(),]
         )

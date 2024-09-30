@@ -242,7 +242,7 @@ def calculate_performance(predictions: pd.DataFrame) -> str:
     )
 
     return "\n\n".join(
-        [f"RECALL: {recall}",
+        [f"|RECALL|\n|---|\n|{recall}|",
         contingency_table.to_markdown(),
         correct_predictions_by_svtype.to_markdown(),]
     )
