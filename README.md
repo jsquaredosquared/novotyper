@@ -1,6 +1,6 @@
 # Novotyper
 
-This repository contains the code used during the development of a prototype structural variant genotyper tentatively called Novotyper.
+This repository contains the code used during the development of a proof of concept for a structural variant genotyper tentatively called Novotyper.
 - It was created to investigate whether the ratio of the mapping quality at an alternate contig constructed from a predicted SV to the mapping quality at the reference location (as calculated by Novoalign) could be used to accurately genotype structural variants from short-read WGS data.
 - That is, we wanted to see whether the MAPQ ratio could be used to classify the sample as homozygous reference, heterozygous, or homozygous alternate for a given structural variant.
 
@@ -29,7 +29,7 @@ This repository contains the code used during the development of a prototype str
 
 ## Report
 
-- For a basic description of the reasoning behind each step and the findings made during prototyping, please download `notebooks/report.html` and view it in your browser.
+- For a basic description of the reasoning behind each step and the results, please download `notebooks/report.html` and view it in your browser.
 
 ### Benchmarks
 
