@@ -4,7 +4,9 @@ This repository contains the code used during the development of a prototype str
 - It was created to investigate whether the ratio of the mapping quality at an alternate contig constructed from a predicted SV to the mapping quality at the reference location (as calculated by Novoalign) could be used to accurately genotype structural variants from short-read WGS data.
 - That is, we wanted to see whether the MAPQ ratio could be used to classify the sample as homozygous reference, heterozygous, or homozygous alternate for a given structural variant.
 
-![](notebooks/assets/cbrt_mapq_chart.svg)
+<p align="center">
+  <img src="notebooks/assets/cbrt_mapq_chart.svg" />
+</p>
 
 ## Quick start
 
