@@ -39,4 +39,4 @@ This repository contains the code used during the development of a proof of conc
 
 ## Acknowledgements
 
-This work was part of my internship at [Novocraft](www.novocraft.com) (July 2024 - September 2024).
+This work was part of my internship at [Novocraft](https://www.novocraft.com) (July 2024 - September 2024).
